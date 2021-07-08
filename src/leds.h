@@ -61,16 +61,6 @@ void sendClockSignal(bool value) {
   ioSet(outClock, value);  
 }
 
-void ledOn(byte led)
-{  
-  ioSet(led, true); 
-}
-
-void ledOff(byte led)
-{
-  ioSet(led, false);  
-}
-
 void shiftOut(int myDataPin, int myClockPin, byte myDataOut)
 {
   int i = 0;
