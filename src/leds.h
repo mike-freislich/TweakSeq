@@ -5,7 +5,7 @@
 #include "ImTimer.h"
 #include "logger.h"
 
-const int DISP_HoldValue = 500;
+const int DISP_HoldValue = 1000;
 
 const int outputEnablePin = 3;  // Shift Register - pin 13
 const int dataPin = 4;          // Shift Register - pin 14
@@ -58,9 +58,7 @@ void sendGateSignal(bool value) {
 }
 
 void sendClockSignal(bool value) {
-  ioSet(outClock, value);
-  //Serial.println("clock signal");
-  if (value) log("clock signal\n"); 
+  ioSet(outClock, value);  
 }
 
 void ledOn(byte led)

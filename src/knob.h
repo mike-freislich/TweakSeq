@@ -54,6 +54,7 @@ class Knob {
   public:
     Knob(byte index, AnalogMultiButton amButton, int pin1, int pin2) {
       encoder = new RotaryEncoder(pin2, pin1, RotaryEncoder::LatchMode::FOUR3);
+      this->index = index;
       this->amButton = &amButton;
     }
 
@@ -77,10 +78,8 @@ class Knob {
       setMode(modeIndex);     
     }
 
-    void setMode(byte mode) {
-      
-      modeIndex == modeIndex%3;
-           
+    void setMode(byte mode) {      
+      modeIndex = mode % 3;           
       encoder->setPosition(getKnobState(modeIndex)->pos);
       setLED();
       
@@ -95,13 +94,16 @@ class Knob {
       Serial.print(rangeMax[modeIndex]);
       log("\n");
       */
-    }
-
+    
+}
     void setLED() {
       for (byte i = 0; i < 3; i ++) {
-        ioSet(knobModes[i], false); 
+        setLedState(knobModes[i], ledOFF); 
       }
-      ioSet(knobModes[modeIndex], true);
+      setLedState(knobModes[modeIndex], ledON);
+      char buffer[30];
+      sprintf(buffer, "knob %d set to mode %d\n", index, modeIndex);
+      log(buffer);
     }
 
     byte getMode() {
@@ -149,6 +151,8 @@ class Knob {
 
     int getRangeMin() { return getKnobState(modeIndex)->rangeMin; }
     int getRangeMax() { return getKnobState(modeIndex)->rangeMax; }
+
+    byte getIndex() { return index; }
 };
 
 Knob* knob[3];
