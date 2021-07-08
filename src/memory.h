@@ -26,7 +26,7 @@ const byte TIE  = REST + 1;
 const byte MIDI_OFFSET = 23;
 byte pattern[] = {0, 12, 24, 36, 48, 60, 72, 84, 36, 39, 41, 39, 36, 40, 41, 95};
 
-void savePattern(uint16_t toSlot, byte inBank) {
+void savePattern(uint8_t toSlot, byte inBank) {
   int slotLocation = (toSlot * PATTERN_STEP_MAX) + (inBank * PATTERN_STEP_MAX * PATTERN_MAX);
   uint16_t offset;
   for (int i = 0; i < PATTERN_STEP_MAX; i++) {
@@ -36,7 +36,7 @@ void savePattern(uint16_t toSlot, byte inBank) {
   }
 }
 
-void loadPattern(byte fromSlot, byte inBank) {
+void loadPattern(uint8_t fromSlot, byte inBank) {
   int slotLocation = (fromSlot * PATTERN_STEP_MAX) + (inBank * PATTERN_STEP_MAX * PATTERN_MAX);
   for (byte i = 0; i < PATTERN_STEP_MAX; i++)
     pattern[i] = EEPROM.read(slotLocation + i);

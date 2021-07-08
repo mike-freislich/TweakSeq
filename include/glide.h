@@ -1,7 +1,7 @@
 #ifndef MY_GLIDE
 #define MY_GLIDE
 #include "spline.h"
-const byte CURVE_RESOLUTION=30;
+const byte CURVE_RESOLUTION=20;
 class Glide {
   private:
     unsigned long startTime;    // when the note started playing

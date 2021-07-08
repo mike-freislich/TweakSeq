@@ -1,9 +1,8 @@
-#define LOGGING true
+#define LOGGING false
 #define GRAPHING false
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "logger.h"
 #include "sequencer.h"
 #include "controls.h"
 #include "dac.h"
@@ -14,6 +13,7 @@
 #include "leds.h"
 #include "knob.h"
 #include "patternLoad.h"
+#include "MemoryFree.h"
 
 /* --------------- FUNCTION HEADERS -----------------
 */
@@ -27,6 +27,7 @@ void handleMiddleRotaryEncoder();
 void handleRightRotaryEncoder();
 void handlePianoKeys();
 void updateControls();
+void showFreeMemory(uint8_t i);
 
 /* ---------------- GLOBAL VARS ------------------
 */
@@ -43,16 +44,26 @@ void interruptCallback() { seq->externalClockTrigger(); }
 void setup()
 {
     Serial.begin(115200);
-    log("Loading...\n");
-
+    Serial.println("Loading...");
+    showFreeMemory(1);
     setupSequencer();
-    setupLeds();
+    showFreeMemory(2);    
+    setupLeds();       
     dac.init();
     setupIO();
     setupKnobs();
+    showFreeMemory(6);
 
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
     bpmClock.start(looping, 60.0 / 120 * 1000, bpmClockCallback);
+    showFreeMemory(7);    
+}
+
+void showFreeMemory(uint8_t i) {
+    Serial.print("freemem[(");
+    Serial.print(i);
+    Serial.print("]=");
+    Serial.println(freeMemory());
 }
 
 void setupSequencer()
@@ -127,7 +138,6 @@ void setupKnobs()
 
 /* ---------------- LOOP ----------------
 */
-
 void loop()
 {
     bpmClock.update();
@@ -135,7 +145,7 @@ void loop()
     clockLedTimer.update();
     seq->updateDAC();
     updateControls();
-    updateDisplay();    
+    updateDisplay();        
 }
 
 /* ---------------- CONTROLS HANDLING  ----------------
@@ -162,7 +172,6 @@ void handleFunctionButtons()
         else
         {
             setLedState(ledPLAY, getLedState(ledPLAY)); // Toggle Play
-
             if (ioState(ledPLAY) == ledON)
                 seq->pause();
             else
@@ -175,6 +184,8 @@ void handleFunctionButtons()
         if (seq->isStepEditing())
         { // STEP-EDIT : INSERT REST
             seq->patternInsertRest();
+        } else {
+            showFreeMemory(99);
         }
     }
 

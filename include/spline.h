@@ -16,7 +16,7 @@ enum CurveType {
 class Spline {
   private:
     int amp = 1;
-    int samples = 30;
+    int samples = 20;
     double *xValues;
     double *yValues;
     CurveType curveType;
@@ -39,8 +39,8 @@ class Spline {
 
       for (int k = 0; k < w; k++) {
         for (int s = 0; s < n; s ++) {
-          Pxi[s] = scPx[s]; // Pxi.set(scPx);
-          Pyi[s] = scPy[s]; // Pyi.set(scPy);
+          Pxi[s] = scPx[s]; 
+          Pyi[s] = scPy[s]; 
         }
 
         for (int j = 2; j > 0 ; j--) {

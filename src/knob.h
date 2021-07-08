@@ -6,7 +6,7 @@
 #include <RotaryEncoder.h>
 #include "leds.h"
 
-enum KnobFunction {
+enum KnobFunction:byte {
   TempoAdjust   = 16,
   StepSelect,
   GateTime,
@@ -19,10 +19,9 @@ enum KnobFunction {
   };
 
 struct KnobState {
-  int pos = 0;
-  int rangeMin = 0;
-  int rangeMax = 20;
-  bool constrained = true;
+  byte pos = 0;
+  byte rangeMin = 0;
+  byte rangeMax = 20;  
 };
 
 class Knob {
@@ -36,9 +35,8 @@ class Knob {
 
     KnobState knobState[3][3];
     
-    int lastDirection = 0;
+    byte lastDirection = 0;
     bool changed = false;
-
 
     int constrainPos(int pos, int rangeMin, int rangeMax) {
       int newPos = pos;
@@ -81,29 +79,13 @@ class Knob {
     void setMode(byte mode) {      
       modeIndex = mode % 3;           
       encoder->setPosition(getKnobState(modeIndex)->pos);
-      setLED();
-      
-      //log("k");
-      //Serial.print(index);
-      /*
-      log("\tmode: ");
-      Serial.print(modeIndex);
-      log("\trange min: ");
-      Serial.print(rangeMin[modeIndex]);
-      log("\trange max: ");
-      Serial.print(rangeMax[modeIndex]);
-      log("\n");
-      */
-    
+      setLED();                
 }
     void setLED() {
       for (byte i = 0; i < 3; i ++) {
         setLedState(knobModes[i], ledOFF); 
       }
       setLedState(knobModes[modeIndex], ledON);
-      char buffer[30];
-      sprintf(buffer, "knob %d set to mode %d\n", index, modeIndex);
-      log(buffer);
     }
 
     byte getMode() {
@@ -130,12 +112,6 @@ class Knob {
       }
 
       if (k->pos != newPos) {
-        /*
-        Serial.print("pos:");
-        Serial.print(newPos);
-        Serial.print(" dir:");
-        Serial.println(lastDirection);
-        */
         k->pos = newPos;        
       }           
     }

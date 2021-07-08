@@ -5,7 +5,7 @@
 #include "controls.h"
 #include "ImTimer.h"
 
-enum LoadState { MEM_cancel, MEM_bankSelect, MEM_patternSelect, MEM_confirmLoad, MEM_patternLoading, MEM_complete };
+enum LoadState:byte { MEM_cancel, MEM_bankSelect, MEM_patternSelect, MEM_confirmLoad, MEM_patternLoading, MEM_complete };
 LoadState loadState = MEM_complete;
 
 void plUpdate() {
@@ -27,8 +27,7 @@ void bankSelect() {
     loadState = MEM_patternSelect;
 }
 
-void cancelPatternLoad() {
-  
+void cancelPatternLoad() {  
   loadState = MEM_complete;
 }
 

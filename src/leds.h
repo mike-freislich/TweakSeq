@@ -3,28 +3,26 @@
 
 #include <Arduino.h>
 #include "ImTimer.h"
-#include "logger.h"
 
 const int DISP_HoldValue = 1000;
 
-const int outputEnablePin = 3;  // Shift Register - pin 13
-const int dataPin = 4;          // Shift Register - pin 14
-const int latchPin = 5;         // Shift Register - pin 12
-const int clockPin = 6;         // Shift Register - pin 11
+const uint8_t outputEnablePin = 3;  // Shift Register - pin 13
+const uint8_t dataPin = 4;          // Shift Register - pin 14
+const uint8_t latchPin = 5;         // Shift Register - pin 12
+const uint8_t clockPin = 6;         // Shift Register - pin 11
 
-const byte ledKnob[9] = {16,17,18,19,20,21,22,23,24};
-const byte ledSHIFT = 25;
-const byte ledPLAY = 31;
-const byte ledENTER = 28;
-const byte ledClock = 26;
-const byte ledGate = 27;
-const byte outClock = 29;
-const byte outGate = 30;
+const uint8_t ledKnob[9] PROGMEM = {16,17,18,19,20,21,22,23,24};
+const uint8_t ledSHIFT = 25;
+const uint8_t ledPLAY = 31;
+const uint8_t ledENTER = 28;
+const uint8_t ledClock = 26;
+const uint8_t ledGate = 27;
+const uint8_t outClock = 29;
+const uint8_t outGate = 30;
 
 unsigned long uiData = 0, flashData = 0;
 bool flashState = false;
 bool didDisplayUpdate = false;
-
 
 enum LedState:byte {  ledOFF = 0, ledON = 1, ledFLASH = 2 };
 enum DisplayMode { DM_SEQUENCE, DM_VALUE };
@@ -32,6 +30,26 @@ DisplayMode displayMode = DM_SEQUENCE;
 
 ImTimer dialogTimer;
 ImTimer flashTimer;
+
+// region function-declarations
+void setBrightness(byte brightness);
+bool ioState(byte channel);
+void ioSet(byte channel, bool value);
+void sendGateSignal(bool value);
+void sendClockSignal(bool value);
+void shiftOut(int myDataPin, int myClockPin, byte myDataOut);
+void updateShiftRegister(unsigned long data);
+void clearSequenceLights();
+void setSequencerStep(byte step);
+void setSequencerDisplay();
+void hideDialog();
+void setValuePicker(int value, int low, int high, int ms);
+void updateDisplay();
+LedState getLedState(byte ledIndex);
+void setLedState(byte ledIndex, LedState state);
+LedState nextLedState(byte ledIndex);
+void flashTimerTick();
+void setupLeds();
 
 
 void setBrightness(byte brightness) // 0 to 255
@@ -102,7 +120,7 @@ void updateShiftRegister(unsigned long data)
 void clearSequenceLights()
 {
   for (byte i = 0; i < 16; i ++)
-    ioSet(i, false);    
+    setLedState(i, ledOFF);    
 }
 
 void setSequencerStep(byte step) {
@@ -117,10 +135,15 @@ void setSequencerDisplay() {
   clearSequenceLights();
 }
 
+void hideDialog() {
+  dialogTimer.stop();
+  setSequencerDisplay();
+}
+
 void setValuePicker(int value, int low, int high, int ms) {
   
-  if (ms > 0)                                           // if zero or less... there's no timeout
-    dialogTimer.start(once, ms, setSequencerDisplay);  // timeout 
+  if (ms > 0)                                 // if zero or less... there's no timeout
+    dialogTimer.start(once, ms, hideDialog);  // timeout 
   
   displayMode = DM_VALUE;
     
@@ -133,13 +156,6 @@ void setValuePicker(int value, int low, int high, int ms) {
   for (byte i = 0; i <= percentValue; i ++) {
     ioSet(i, true);  
   } 
-}
-
-
-
-void hideDialog() {
-  dialogTimer.stop();
-  setSequencerDisplay();
 }
 
 void updateDisplay() {  

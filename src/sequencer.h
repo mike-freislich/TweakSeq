@@ -7,26 +7,23 @@
 #include "memory.h"
 #include "dac.h"
 
-const int MAXTEMPO=4000;
+const uint16_t MAXTEMPO=4000;
 
 // SEQUENCER
 MP4822 dac;
-
 enum PlayModes: byte { FORWARD = 1, REVERSE = 2, PINGPONG = 3, CHAOS = 4 }; PlayModes playMode = FORWARD;
 
 // EXTERNAL CLOCK
-unsigned long lastClockExt = 0;
+uint32_t lastClockExt = 0;
 enum ClockMode { CLK_INTERNAL, CLK_EXTERNAL}; ClockMode clockMode = CLK_INTERNAL;
 bool extClockTriggered = false;
 
 enum SequencerState { MODE_SEQUENCER, MODE_BANKSELECT, MODE_PATTERNSELECT };
 bool currentMode = MODE_SEQUENCER;
 
-
 ImTimer bpmClock;
 ImTimer gateTimer;
 ImTimer clockLedTimer;
-
 
 class Sequencer {
 
@@ -69,14 +66,13 @@ class Sequencer {
         setLedState(ledSHIFT, ledOFF);
         currentStep = 0;
         isPaused = true;
-        setSequencerStep(currentStep); 
-        log("recording started\n"); 
+        setSequencerStep(currentStep);         
       } else {
         setLedState(ledPLAY, ledOFF);     // record mode OFF
         this->pause();
-        log("recording stopped\n"); 
       }
     }
+    
     int getCurrentStep() { return currentStep; }
 
     int getTempo() { return bpmMilliseconds; }
@@ -348,6 +344,7 @@ class Sequencer {
       if (serialCounter == 0) {
 
         int GRAPHSCALE = 8;
+        /*
         Serial.print("octave:");
         Serial.print(octave * 1000);
         Serial.print(",voltage-A:");
@@ -363,6 +360,7 @@ class Sequencer {
         Serial.print(",white:");
         Serial.print(analogRead(BUTTONS_KBD_WHITE) * GRAPHSCALE);
         Serial.println();
+        */
       }
 #endif
 
@@ -371,10 +369,12 @@ class Sequencer {
 
     void printData(Note &note) {
 #if (LOGGING)
+/*
       char buffer[100];
       sprintf(buffer, "[BPM: %04d ] - step: %02d, octave: %u, note: %u, voltage: %04u, \trest:%d, tie:%d",
               bpm, currentStep, note.octave, note.pitch, note.voltage, note.isRest, note.isTie);
       Serial.println(buffer);
+      */
 #endif
     }
 };
