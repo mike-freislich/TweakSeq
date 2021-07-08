@@ -39,14 +39,11 @@ void startLoadPattern() {
     switch (loadState) {
       case MEM_bankSelect:
         bankSelect();        
-        break;
       case MEM_patternSelect:
-        break;
       case MEM_confirmLoad:
-        break;
       case MEM_patternLoading:
-        break;
       case MEM_complete:
+      case MEM_cancel:
         break;
     }    
   }

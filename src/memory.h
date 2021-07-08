@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <EEPROM.h> //for reading and writing patterns to permanent memory
 
-
 /* NOTE DATA SPEC
  * 0-95 pitch
  * midi offset = pitch + 23
@@ -29,7 +28,7 @@ byte pattern[] = {0, 12, 24, 36, 48, 60, 72, 84, 36, 39, 41, 39, 36, 40, 41, 95}
 
 void savePattern(uint16_t toSlot, byte inBank) {
   int slotLocation = (toSlot * PATTERN_STEP_MAX) + (inBank * PATTERN_STEP_MAX * PATTERN_MAX);
-  int offset;
+  uint16_t offset;
   for (int i = 0; i < PATTERN_STEP_MAX; i++) {
     if (offset < EEPROM.length()) {
       EEPROM.write(slotLocation + i, pattern[i]);

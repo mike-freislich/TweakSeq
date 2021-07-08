@@ -193,6 +193,7 @@ void setLedState(byte ledIndex, LedState state) {
 LedState nextLedState(byte ledIndex) {
     LedState newState = static_cast<LedState>((getLedState(ledIndex) + 1) % 3);
     setLedState(ledIndex, newState);
+    return newState;
 }
 
 void flashTimerTick() {

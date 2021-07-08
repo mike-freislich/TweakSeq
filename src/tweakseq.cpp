@@ -135,7 +135,7 @@ void loop()
     clockLedTimer.update();
     seq->updateDAC();
     updateControls();
-    updateDisplay();
+    updateDisplay();    
 }
 
 /* ---------------- CONTROLS HANDLING  ----------------

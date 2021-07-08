@@ -3,8 +3,9 @@
 
 #include <Arduino.h>
 
-void log(char* buffer) {
+void log(const char* buffer) {
   #if (LOGGING)
+  
   Serial.print(buffer);
   #endif
 }
