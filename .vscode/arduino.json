@@ -1,0 +1,6 @@
+{
+    "configuration": "cpu=atmega328",
+    "board": "arduino:avr:nano",
+    "sketch": "src/digiseq2.ino",
+    "port": "/dev/tty.usbserial-1410"
+}
