@@ -40,7 +40,6 @@ void interruptCallback() { seq->externalClockTrigger(); }
 
 /* ---------------- SETUP ----------------
 */
-
 void setup()
 {
     Serial.begin(115200);

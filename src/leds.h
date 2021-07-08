@@ -11,7 +11,7 @@ const uint8_t dataPin = 4;          // Shift Register - pin 14
 const uint8_t latchPin = 5;         // Shift Register - pin 12
 const uint8_t clockPin = 6;         // Shift Register - pin 11
 
-const uint8_t ledKnob[9] PROGMEM = {16,17,18,19,20,21,22,23,24};
+const uint8_t ledKnob[9] = {16,17,18,19,20,21,22,23,24};
 const uint8_t ledSHIFT = 25;
 const uint8_t ledPLAY = 31;
 const uint8_t ledENTER = 28;
