@@ -160,7 +160,7 @@ void hideDialog()
   setSequencerDisplay();
 }
 
-void setValuePicker(uint16_t value, uint16_t low, uint16_t high, uint16_t ms = 1000)
+void setValuePicker(int16_t value, int16_t low, int16_t high, uint16_t ms = 1000)
 {
 
   if (ms > 0)                                // if zero or less... there's no timeout
@@ -170,12 +170,12 @@ void setValuePicker(uint16_t value, uint16_t low, uint16_t high, uint16_t ms = 1
 
   uint16_t percentValue;
   uint16_t steps = high - low + 1;
-  
-  #if (LOGGING)
+
+#if (LOGGING)
   char buffer[30];
   sprintf(buffer, "low:%d\thigh: %d\tsteps: %d\tvalue: %d", low, high, steps, value);
   Serial.println(buffer);
-  #endif
+#endif
 
   if (steps <= 10 || steps == 16)
   {
@@ -192,19 +192,26 @@ void setValuePicker(uint16_t value, uint16_t low, uint16_t high, uint16_t ms = 1
 
   if (steps != 16)
   {
-    LedState state = (value == low) ? ledFLASH : ledON;
+    LedState state = (value == low || (low < 0 && value == 0)) ? ledFLASH : ledON;
     setLedState(0, state);
     setLedState(1, state);
 
-    state = (value == high) ? ledFLASH : ledON;
+    state = ((value == high) || (low < 0 && value == 0)) ? ledFLASH : ledON;
     setLedState(14, state);
     setLedState(15, state);
   }
 
   uint8_t offset = steps == 16 ? 0 : 3;
-  for (uint8_t i = 0; i < percentValue; i++)
+  if (low < 0)
   {
-    setLedState(i + offset, ledON);
+    setLedState((percentValue - 1) + offset, ledON);
+  }
+  else
+  {
+    for (uint8_t i = 0; i < percentValue; i++)
+    {
+      setLedState(i + offset, ledON);
+    }
   }
 }
 

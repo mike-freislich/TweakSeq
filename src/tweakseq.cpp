@@ -97,7 +97,7 @@ void setupKnobs()
     knob[1] = new Knob(1, encoderButtons, KNOB2_A, KNOB2_B);
     knob[1]->setRange(ledOFF, 0, 1, 5);  // play mode
     knob[1]->setRange(ledOFF, 1, 0, 24); // glide time
-    knob[1]->setRange(ledOFF, 2, 1, 12); // pitch
+    knob[1]->setRange(ledOFF, 2, -24, 24); // pitch
     knob[1]->setRange(ledON, 0, 1, 4);   // play mode
     knob[1]->setRange(ledON, 1, 0, 24);  // glide time
     knob[1]->setRange(ledON, 2, 1, 12);  // pitch
@@ -288,29 +288,32 @@ void handleLeftRotaryEncoder()
 
 void handleMiddleRotaryEncoder()
 {
-    if (knob[1]->didChange())
+    Knob *k = knob[1];
+    if (k->didChange())
     {
         //log("middle encoder value changed\n");
-        short value = knob[1]->value();
+        short value = k->value();
 
-        switch (knob[1]->getMode())
+        switch (k->getMode())
         {
         case 0: // playMode
-            playMode = static_cast<PlayModes>(knob[1]->value());
-            setValuePicker(value, knob[1]->getRangeMin(), knob[1]->getRangeMax(), DISP_TIMEOUT);
+            playMode = static_cast<PlayModes>(k->value());
+            setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
 
         case 1: // glide time
 
             seq->setGlideTime(value / (float)knob[1]->getRangeMax());
-            setValuePicker(value, knob[1]->getRangeMin(), knob[1]->getRangeMax(), DISP_TIMEOUT);
+            setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
 
         case 2: // pitch
-            //setGateTime(value);
+            //Serial.print(k->direction());
+            seq->setTranspose(k->direction());
+            setValuePicker(seq->getTranspose(), k->getRangeMin(), k->getRangeMax());
             break;
         }
-    }
+    }    
 }
 
 void handleRightRotaryEncoder()

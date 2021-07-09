@@ -57,7 +57,7 @@ private:
   Note previousNote;
   Glide glide;
   bool isPaused = true;
-  byte transpose = 0;
+  short transpose = 0;
 
   uint16_t bpm = 120;
   byte curveIndex = CURVE_B;
@@ -112,6 +112,16 @@ public:
   void setPatternLength(int value) { patternLength = value; }
   void setCurveShape(int value) { glide.setCurve(static_cast<CurveType>(value)); }
   void setOctave(int value) { octave = value; }
+  short getTranspose() { return transpose; }
+
+  void setTranspose(short direction)
+  {
+    if (direction != 0)
+    {
+      transpose = constrain(this->transpose + direction, -24, 24);            
+      Serial.println(transpose);
+    }
+  }
 
   /* ---------------- CLOCK HANDLING  ----------------
     */
@@ -241,7 +251,7 @@ public:
       break;
     }
     case CHAOS:
-    case CHAOS_CURVES:    
+    case CHAOS_CURVES:
     {
       retVal = random(0, patternLength);
       break;
@@ -357,7 +367,8 @@ public:
   {
     previousNote = currentNote;
     currentNote = getPatternNote(currentStep);
-    if (playMode == CHAOS_CURVES) setCurveShape(random(4));
+    if (playMode == CHAOS_CURVES)
+      setCurveShape(random(4));
     if (currentNote.isRest)
     {
       currentNote.pitch = previousNote.pitch;
@@ -407,7 +418,7 @@ public:
   void cvOut(byte channel, int v)
   {
     String errmsg = "";
-    dac.DAC_set(v, channel, 0, DAC_CS, errmsg);
+    dac.DAC_set(constrain(v + (transpose * 40),0,3840), channel, 0, DAC_CS, errmsg);
   }
 
   void updateDAC()

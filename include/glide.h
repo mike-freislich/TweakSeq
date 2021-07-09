@@ -66,7 +66,7 @@ public:
     this->glideScale = pitch2 - pitch1;
   }
 
-  int getPitch()
+  uint16_t getPitch()
   {
     if ((glideScale == 0) || (portamento == 0))
       return pitch2;
