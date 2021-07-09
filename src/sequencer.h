@@ -117,10 +117,7 @@ public:
   void setTranspose(short direction)
   {
     if (direction != 0)
-    {
       transpose = constrain(this->transpose + direction, -24, 24);            
-      Serial.println(transpose);
-    }
   }
 
   /* ---------------- CLOCK HANDLING  ----------------

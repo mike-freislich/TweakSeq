@@ -307,8 +307,7 @@ void handleMiddleRotaryEncoder()
             setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
 
-        case 2: // pitch
-            //Serial.print(k->direction());
+        case 2: // pitch            
             seq->setTranspose(k->direction());
             setValuePicker(seq->getTranspose(), k->getRangeMin(), k->getRangeMax());
             break;
