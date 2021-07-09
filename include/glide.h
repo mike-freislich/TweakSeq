@@ -15,7 +15,8 @@ enum CurveType
 {
   CURVE_A = 0,
   CURVE_B,
-  CURVE_C
+  CURVE_C,
+  CURVE_D
 };
 
 class Glide
@@ -94,28 +95,34 @@ public:
 
   float getCurveX(uint8_t k)
   {
-    switch (curveType) {
-      case CURVE_A:
-        return pgm_read_word_near(curveDataAx + k) / 100.0;
-      case CURVE_B:
-        return pgm_read_word_near(curveDataBx + k) / 100.0;
-      case CURVE_C:
-        break;
+    switch (curveType)
+    {
+    case CURVE_A:
+      return pgm_read_word_near(curveDataAx + k) / 100.0;
+    case CURVE_B:
+      return pgm_read_word_near(curveDataBx + k) / 100.0;
+    case CURVE_C:
+      return pgm_read_word_near(curveDataCx + k) / 100.0;
+    case CURVE_D:
+      break;
     }
-    return pgm_read_word_near(curveDataCx + k) / 100.0;
+    return 0;
   }
 
   float getCurveY(uint8_t k)
   {
-    switch (curveType) {
-      case CURVE_A:
-        return pgm_read_word_near(curveDataAy + k) / 100.0;
-      case CURVE_B:
-        return pgm_read_word_near(curveDataBy + k) / 100.0;
-      case CURVE_C:
-        break;
+    switch (curveType)
+    {
+    case CURVE_A:
+      return pgm_read_word_near(curveDataAy + k) / 100.0;
+    case CURVE_B:
+      return pgm_read_word_near(curveDataBy + k) / 100.0;
+    case CURVE_C:
+      return pgm_read_word_near(curveDataCy + k) / 100.0;
+    case CURVE_D:
+      break;
     }
-    return pgm_read_word_near(curveDataCy + k) / 100.0;
+    return 0;
   }
 
   double SmoothStep(float pointX, bool trim = true)

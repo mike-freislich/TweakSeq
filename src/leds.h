@@ -6,12 +6,12 @@
 
 const uint16_t DISP_TIMEOUT = 1000;
 
-const uint8_t outputEnablePin = 3;  // Shift Register - pin 13
-const uint8_t dataPin = 4;          // Shift Register - pin 14
-const uint8_t latchPin = 5;         // Shift Register - pin 12
-const uint8_t clockPin = 6;         // Shift Register - pin 11
+const uint8_t outputEnablePin = 3; // Shift Register - pin 13
+const uint8_t dataPin = 4;         // Shift Register - pin 14
+const uint8_t latchPin = 5;        // Shift Register - pin 12
+const uint8_t clockPin = 6;        // Shift Register - pin 11
 
-const uint8_t ledKnob[] PROGMEM = {16,17,18,19,20,21,22,23,24};
+const uint8_t ledKnob[] PROGMEM = {16, 17, 18, 19, 20, 21, 22, 23, 24};
 const uint8_t ledSHIFT = 25;
 const uint8_t ledPLAY = 31;
 const uint8_t ledENTER = 28;
@@ -24,8 +24,17 @@ unsigned long uiData = 0, flashData = 0;
 bool flashState = false;
 bool didDisplayUpdate = false;
 
-enum LedState:uint8_t {  ledOFF = 0, ledON = 1, ledFLASH = 2 };
-enum DisplayMode { DM_SEQUENCE, DM_VALUE };
+enum LedState : uint8_t
+{
+  ledOFF = 0,
+  ledON = 1,
+  ledFLASH = 2
+};
+enum DisplayMode
+{
+  DM_SEQUENCE,
+  DM_VALUE
+};
 DisplayMode displayMode = DM_SEQUENCE;
 
 ImTimer dialogTimer;
@@ -43,7 +52,7 @@ void clearSequenceLights();
 void setSequencerStep(uint8_t step);
 void setSequencerDisplay();
 void hideDialog();
-void setValuePicker(int value, int low, int high, int ms);
+void setValuePicker(uint16_t value, uint16_t low, uint16_t high, uint16_t ms);
 void updateDisplay();
 LedState getLedState(uint8_t ledIndex);
 void setLedState(uint8_t ledIndex, LedState state);
@@ -51,32 +60,38 @@ LedState nextLedState(uint8_t ledIndex);
 void flashTimerTick();
 void setupLeds();
 
-
 void setBrightness(uint8_t brightness) // 0 to 255
 {
-  analogWrite(outputEnablePin, 255 - brightness);  
+  analogWrite(outputEnablePin, 255 - brightness);
 }
 
-bool ioState(uint8_t channel) {
+bool ioState(uint8_t channel)
+{
   return (bitRead(uiData, channel) == 1);
 }
 
-void ioSet(uint8_t channel, bool value) {
+void ioSet(uint8_t channel, bool value)
+{
   didDisplayUpdate = true;
-  
-  if (value) {
-    bitSet(uiData, channel);    
-  } else {
+
+  if (value)
+  {
+    bitSet(uiData, channel);
+  }
+  else
+  {
     bitClear(uiData, channel);
-  }  
+  }
 }
 
-void sendGateSignal(bool value) {
-  ioSet(outGate, value); 
+void sendGateSignal(bool value)
+{
+  ioSet(outGate, value);
 }
 
-void sendClockSignal(bool value) {
-  ioSet(outClock, value);  
+void sendClockSignal(bool value)
+{
+  ioSet(outClock, value);
 }
 
 void shiftOut(int myDataPin, int myClockPin, uint8_t myDataOut)
@@ -87,9 +102,10 @@ void shiftOut(int myDataPin, int myClockPin, uint8_t myDataOut)
   pinMode(myDataPin, OUTPUT);
   digitalWrite(myDataPin, 0);
   digitalWrite(myClockPin, 0);
-  for (i = 7; i >= 0; i--)  {
+  for (i = 7; i >= 0; i--)
+  {
     digitalWrite(myClockPin, 0);
-    if ( myDataOut & (1 << i) )
+    if (myDataOut & (1 << i))
       pinState = 1;
     else
       pinState = 0;
@@ -113,105 +129,150 @@ void updateShiftRegister(unsigned long data)
   shiftOut(dataPin, clockPin, dataB);
   shiftOut(dataPin, clockPin, dataA);
   digitalWrite(latchPin, HIGH);
-  
+
   didDisplayUpdate = false;
 }
 
 void clearSequenceLights()
 {
-  for (uint8_t i = 0; i < 16; i ++)
-    setLedState(i, ledOFF);    
+  for (uint8_t i = 0; i < 16; i++)
+    setLedState(i, ledOFF);
 }
 
-void setSequencerStep(uint8_t step) {
-  if (displayMode == DM_SEQUENCE) {
-    clearSequenceLights();  
-    ioSet(step%16, true);
+void setSequencerStep(uint8_t step)
+{
+  if (displayMode == DM_SEQUENCE)
+  {
+    clearSequenceLights();
+    ioSet(step % 16, true);
   }
 }
 
-void setSequencerDisplay() {
+void setSequencerDisplay()
+{
   displayMode = DM_SEQUENCE;
   clearSequenceLights();
 }
 
-void hideDialog() {
+void hideDialog()
+{
   dialogTimer.stop();
   setSequencerDisplay();
 }
 
-void setValuePicker(int value, int low, int high, int ms) {
-  
-  if (ms > 0)                                 // if zero or less... there's no timeout
-    dialogTimer.start(once, ms, hideDialog);  // timeout 
-  
-  displayMode = DM_VALUE;
-    
-  clearSequenceLights(); 
-  int steps = high - low; 
-  int percentValue = (double)(value - low) / (double)steps * 16;
+void setValuePicker(uint16_t value, uint16_t low, uint16_t high, uint16_t ms = 1000)
+{
 
-  if (percentValue > 15) percentValue = 15;
-      
-  for (uint8_t i = 0; i <= percentValue; i ++) {
-    ioSet(i, true);  
-  } 
+  if (ms > 0)                                // if zero or less... there's no timeout
+    dialogTimer.start(once, ms, hideDialog); // timeout
+
+  displayMode = DM_VALUE;
+
+  uint16_t percentValue;
+  uint16_t steps = high - low + 1;
+  
+  #if (LOGGING)
+  char buffer[30];
+  sprintf(buffer, "low:%d\thigh: %d\tsteps: %d\tvalue: %d", low, high, steps, value);
+  Serial.println(buffer);
+  #endif
+
+  if (steps <= 10 || steps == 16)
+  {
+    percentValue = (low == 0) ? value + 1 : value;
+  }
+  else
+  {
+    percentValue = ceil((double)(value - low) / (double)steps * 10);
+    percentValue = min(percentValue, 10);
+    percentValue = max(percentValue, 1);
+  }
+
+  clearSequenceLights();
+
+  if (steps != 16)
+  {
+    LedState state = (value == low) ? ledFLASH : ledON;
+    setLedState(0, state);
+    setLedState(1, state);
+
+    state = (value == high) ? ledFLASH : ledON;
+    setLedState(14, state);
+    setLedState(15, state);
+  }
+
+  uint8_t offset = steps == 16 ? 0 : 3;
+  for (uint8_t i = 0; i < percentValue; i++)
+  {
+    setLedState(i + offset, ledON);
+  }
 }
 
-void updateDisplay() {  
+void updateDisplay()
+{
   dialogTimer.update();
   flashTimer.update();
 
-  if (didDisplayUpdate) updateShiftRegister(uiData);
+  if (didDisplayUpdate)
+    updateShiftRegister(uiData);
 }
 
-LedState getLedState(uint8_t ledIndex) {
+LedState getLedState(uint8_t ledIndex)
+{
 
   LedState ledState = (LedState)ioState(ledIndex);
-  
+
   if (bitRead(flashData, ledIndex))
-    ledState = ledFLASH;  
-    
-  return ledState;  
+    ledState = ledFLASH;
+
+  return ledState;
 }
 
-void setLedState(uint8_t ledIndex, LedState state) {
-  if (ledIndex < 0 || ledIndex > 31) return;
+void setLedState(uint8_t ledIndex, LedState state)
+{
+  if (ledIndex < 0 || ledIndex > 31)
+    return;
 
-  switch (state) {
-    
-    case ledOFF:
-      ioSet(ledIndex, false);
-      bitClear(flashData, ledIndex);
-    break;      
-    
-    case ledON:      
-      ioSet(ledIndex, true);
-      bitClear(flashData, ledIndex);
+  switch (state)
+  {
+
+  case ledOFF:
+    ioSet(ledIndex, false);
+    bitClear(flashData, ledIndex);
     break;
-    
-    case ledFLASH:       
-      bitSet(flashData, ledIndex);      
+
+  case ledON:
+    ioSet(ledIndex, true);
+    bitClear(flashData, ledIndex);
+    break;
+
+  case ledFLASH:
+    bitSet(flashData, ledIndex);
     break;
   }
 }
 
-LedState nextLedState(uint8_t ledIndex) {
-    LedState newState = static_cast<LedState>((getLedState(ledIndex) + 1) % 3);
-    setLedState(ledIndex, newState);
-    return newState;
+LedState nextLedState(uint8_t ledIndex)
+{
+  LedState newState = static_cast<LedState>((getLedState(ledIndex) + 1) % 3);
+  setLedState(ledIndex, newState);
+  return newState;
 }
 
-void flashTimerTick() {
+void flashTimerTick()
+{
   flashState = !flashState;
-  for (uint8_t i = 0; i < 32; i ++) {
-    if (bitRead(flashData, i)) {
+  for (uint8_t i = 0; i < 32; i++)
+  {
+    if (bitRead(flashData, i))
+    {
       ioSet(i, flashState);
     }
   }
 }
 
-void setupLeds() {
+void setupLeds()
+{
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
   pinMode(clockPin, OUTPUT);
@@ -220,8 +281,5 @@ void setupLeds() {
   setBrightness(20);
   flashTimer.start(looping, 200, flashTimerTick);
 }
-
-
-
 
 #endif

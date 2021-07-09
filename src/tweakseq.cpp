@@ -42,9 +42,9 @@ void interruptCallback() { seq->externalClockTrigger(); }
 void setup()
 {
     Serial.begin(115200);
+#if (LOGGING)
     Serial.println("Loading...");
-    const uint16_t *testing = FUNC_BUTTONS_VALUES;
-    Serial.println(testing[4]);
+#endif    
     showFreeMemory(1);
     setupSequencer();
     showFreeMemory(2);
@@ -61,10 +61,12 @@ void setup()
 
 void showFreeMemory(uint8_t i)
 {
+#if (LOGGING)
     Serial.print(F("freemem[("));
     Serial.print(i);
     Serial.print(F("]="));
     Serial.println(freeMemory());
+#endif
 }
 
 void setupSequencer()
@@ -93,7 +95,7 @@ void setupKnobs()
     knob[0]->setValue(120 / 10); // bpmMilliseconds
 
     knob[1] = new Knob(1, encoderButtons, KNOB2_A, KNOB2_B);
-    knob[1]->setRange(ledOFF, 0, 1, 4);  // play mode
+    knob[1]->setRange(ledOFF, 0, 1, 5);  // play mode
     knob[1]->setRange(ledOFF, 1, 0, 24); // glide time
     knob[1]->setRange(ledOFF, 2, 1, 12); // pitch
     knob[1]->setRange(ledON, 0, 1, 4);   // play mode
@@ -115,7 +117,7 @@ void setupKnobs()
         NumSteps, GlideShape, Octave,
         NumSteps, GlideShape, Octave});
     knob[2]->setMode(0);
-    knob[2]->setValue(16);    
+    knob[2]->setValue(16);
 }
 
 /* ---------------- LOOP ----------------
@@ -218,24 +220,35 @@ void handleLeftRotaryEncoder()
         case 0: // TEMPO
         {
             uint16_t newTempo;
-            int16_t steps = k->getRangeMax() - k->getRangeMin();            
-            int16_t precisionPoint = steps / 2.0 + (k->getRangeMin()-1);
+            int16_t steps = k->getRangeMax() - k->getRangeMin();
+            int16_t precisionPoint = steps / 2.0 + (k->getRangeMin() - 1);
+#if (LOGGING)
             Serial.print(F("num steps: "));
             Serial.print(steps);
             Serial.print(F("\thalfway: "));
             Serial.println(precisionPoint);
-            if (value <= precisionPoint) {
-                newTempo = k->getRangeMin()+((value - k->getRangeMin()) * 25);
+#endif
+            if (value <= precisionPoint)
+            {
+                newTempo = k->getRangeMin() + ((value - k->getRangeMin()) * 25);
+#if (LOGGING)
                 Serial.print(F("first half: "));
-            } else {                        
+#endif
+            }
+            else
+            {
                 int16_t nonLinearSteps = k->getRangeMax() - precisionPoint;
                 float factor = (value - precisionPoint) / (double)nonLinearSteps;
                 newTempo = value * factor * TEMPODIV;
-                newTempo += k->getRangeMin()+((value - k->getRangeMin()) * 25);
-                //newTempo = max(newTempo, precisionPoint);                
+                newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);
+                //newTempo = max(newTempo, precisionPoint);
+#if (LOGGING)                
                 Serial.print(F("second half: "));
+#endif                
             }
+#if (LOGGING)               
             Serial.println(newTempo);
+#endif            
             seq->setBpmMilliseconds(newTempo);
             setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax(), DISP_TIMEOUT);
             break;
