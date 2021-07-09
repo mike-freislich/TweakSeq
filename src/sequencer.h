@@ -7,7 +7,8 @@
 #include "memory.h"
 #include "dac.h"
 
-const uint16_t MAXTEMPO=4000;
+const uint16_t MAXTEMPO=8000;
+const float TEMPODIV = 80.0;
 
 // SEQUENCER
 MP4822 dac;
@@ -32,25 +33,23 @@ class Sequencer {
     ImTimer* _bpmClock = nullptr;
     ImTimer* _gateTimer = nullptr;
     ImTimer* _clockLedTimer = nullptr;
-    int currentStep = -1;
+    short currentStep = -1;
     Note currentNote;
     Note previousNote;
     Glide glide;
     bool isPaused = true;
     byte transpose = 0;
         
-    int bpm = 120;
-    int curveIndex = CURVE_B;
+    uint16_t bpm = 120;
+    byte curveIndex = CURVE_B;
     float portamento = 0.2;
 
-    int patternLength = 16;
-    int direction = 1;
+    byte patternLength = 16;
+    short direction = 1;
 
-    int gateLength = 10;
-    int gateOpen = 0;
+    byte gateLength = 10;
+    byte gateOpen = 0;
     byte octave = 1;
-
-    byte serialCounter = 0;
 
   public:
     Sequencer(ImTimer* bpm, ImTimer* gate, ImTimer* clockLed) {
@@ -73,11 +72,11 @@ class Sequencer {
       }
     }
     
-    int getCurrentStep() { return currentStep; }
+    short getCurrentStep() { return currentStep; }
 
     int getTempo() { return bpmMilliseconds; }
 
-    void setBpmMilliseconds(int bpm) {
+    void setBpmMilliseconds(uint16_t bpm) {
       bpmMilliseconds = 60.0 / bpm * 1000;
       bpmClock.changeDuration(bpmMilliseconds);
     }
@@ -128,7 +127,7 @@ class Sequencer {
 
     void openGate() {
       gateTimer.start(once, gateLength / 100.0 * getTempo());
-      gateOpen = 5000;
+      gateOpen = 1;
       ioSet(outGate, true);
       setLedState(ledGate, ledON);
     }
@@ -153,7 +152,7 @@ class Sequencer {
       return getLedState(ledPLAY) == ledFLASH;
     }
 
-    int selectStep(int knobDirection) {
+    short selectStep(short knobDirection) {
       if (knobDirection != 0) {
         int x = currentStep;
         if (knobDirection > 0) currentStep = ((x + 1) < patternLength) ? (x + 1) : 0;
@@ -195,7 +194,7 @@ class Sequencer {
             break;
           }
         case PINGPONG: {
-            int test = x + direction;
+            short test = x + direction;
             if (test > patternLength - 1) direction = -1;
             if (test < 0) direction = 1;
 
@@ -209,7 +208,7 @@ class Sequencer {
     uint16_t  pitchToVoltage(uint16_t oct, uint16_t note) {
       // oct = 1 to 8
       // note = 1 to 12  C,C#,D,D#,E,F,F#,G,G#,A,A#,B
-      static int vInc = 40; // 0.040V
+      byte vInc = 40; // 0.040V
       uint16_t voltage = constrain(vInc * (12 * (oct - 1) + 1) + (note - 1) * vInc, 0, 3840);
       return voltage;
     }

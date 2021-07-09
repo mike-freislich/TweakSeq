@@ -19,10 +19,10 @@ enum KnobFunction:byte {
   };
 
 struct KnobState {
-  byte pos = 0;
-  byte rangeMin = 0;
-  byte rangeMax = 20;  
-};
+  short pos = 0;
+  short rangeMin = 0;
+  short rangeMax = 20;  
+} __attribute__ (( __packed__ ));
 
 class Knob {
   private:
@@ -31,15 +31,20 @@ class Knob {
     KnobFunction* knobModes;    
     byte index = 0;    
     byte modeIndex = 0;
-    byte modeShift() { return getLedState(ledSHIFT);}
-
-    KnobState knobState[3][3];
+    byte modeShift() {
     
-    byte lastDirection = 0;
+      byte value = getLedState(ledSHIFT);
+      if (value > 1) value = 1;
+      return value;
+      }
+
+    KnobState knobState[2][3];
+    
+    short lastDirection = 0;
     bool changed = false;
 
-    int constrainPos(int pos, int rangeMin, int rangeMax) {
-      int newPos = pos;
+    short constrainPos(short pos, short rangeMin, short rangeMax) {
+      short newPos = pos;
       if (pos > rangeMax) newPos = rangeMax;        
       if (pos < rangeMin) newPos = rangeMin;
       return newPos;    
@@ -50,22 +55,22 @@ class Knob {
     }
     
   public:
-    Knob(byte index, AnalogMultiButton amButton, int pin1, int pin2) {
+    Knob(byte index, AnalogMultiButton amButton, byte pin1, byte pin2) {
       encoder = new RotaryEncoder(pin2, pin1, RotaryEncoder::LatchMode::FOUR3);
       this->index = index;
       this->amButton = &amButton;
     }
 
-    void setRange(LedState shift, int forMode, int newRangeMin, int newRangeMax) {      
+    void setRange(LedState shift, byte forMode, short newRangeMin, short newRangeMax) {      
       KnobState* k = &knobState[shift][forMode];
       k->rangeMin = newRangeMin;
       k->rangeMax = newRangeMax;
       k->pos = constrainPos(value(), k->rangeMin, k->rangeMax);      
     }
 
-    void setValue(int newValue) {
+    void setValue(short newValue) {
       KnobState* k = getKnobState(modeIndex);
-      int newPos = constrainPos(newValue, k->rangeMin, k->rangeMax);
+      short newPos = constrainPos(newValue, k->rangeMin, k->rangeMax);
       encoder->setPosition(newPos);
       k->pos = newPos;     
     }
@@ -92,7 +97,7 @@ class Knob {
       return modeIndex;
     }
 
-    int value() {
+    short value() {
       return getKnobState(modeIndex)->pos;
     }
 
@@ -102,21 +107,22 @@ class Knob {
 
     void update() {
       encoder->tick();
+      changed = false;
       KnobState* k = getKnobState(modeIndex);
-      int newPos = constrainPos(encoder->getPosition(), k->rangeMin, k->rangeMax);
-      lastDirection = (int)encoder->getDirection();
-      changed = lastDirection != 0;
+      short newPos = constrainPos(encoder->getPosition(), k->rangeMin, k->rangeMax);
+      lastDirection = (short)encoder->getDirection();      
 
       if (newPos != encoder->getPosition()) {
         encoder->setPosition(newPos);
       }
 
       if (k->pos != newPos) {
-        k->pos = newPos;        
+        k->pos = newPos;      
+        changed = true;  
       }           
     }
 
-    int direction() { return lastDirection; }
+    short direction() { return lastDirection; }
     bool onPress() { return amButton->onPress(this->index-1); }
 
     bool didChange() {
@@ -125,8 +131,8 @@ class Knob {
       return c;
     }
 
-    int getRangeMin() { return getKnobState(modeIndex)->rangeMin; }
-    int getRangeMax() { return getKnobState(modeIndex)->rangeMax; }
+    short getRangeMin() { return getKnobState(modeIndex)->rangeMin; }
+    short getRangeMax() { return getKnobState(modeIndex)->rangeMax; }
 
     byte getIndex() { return index; }
 };
