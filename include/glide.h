@@ -36,7 +36,7 @@ public:
   Glide()
   {
     //spline = new Spline(CURVE_RESOLUTION);
-    //this->setCurve(CURVE_A);
+    this->setCurve(CURVE_B);
   }
 
   void setCurve(CurveType curveType)

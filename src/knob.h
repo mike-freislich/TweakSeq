@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <AnalogMultiButton.h>
 #include <RotaryEncoder.h>
-#include "leds.h"
+#include "display.h"
 
 enum KnobFunction:byte {
   TempoAdjust   = 16,

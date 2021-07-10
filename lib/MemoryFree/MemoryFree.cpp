@@ -5,7 +5,6 @@ extern void *__brkval;
 
 #include "MemoryFree.h"
 
-
 int freeMemory() {
   int free_memory;
 

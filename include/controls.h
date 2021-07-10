@@ -3,8 +3,9 @@
 #include <Arduino.h>
 #include <AnalogMultiButton.h>
 #include <RotaryEncoder.h>
-#include "leds.h"
+#include "display.h"
 #include "knob.h"
+
 
 // ANALOG
 const uint8_t BUTTONS_ENCODER    = A4; // resistor ladder beat buttons (3)

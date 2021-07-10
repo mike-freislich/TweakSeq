@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "memory.h"
-#include "leds.h"
+#include "display.h"
 #include "knob.h"
 #include "controls.h"
 #include "ImTimer.h"
@@ -15,7 +15,6 @@ void plUpdate() {
   funcButtons.update();
   pianoBlack.update();
   pianoWhite.update();   
-  
   updateDisplay();
 }
 

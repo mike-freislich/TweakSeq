@@ -9,7 +9,7 @@
 #include "memory.h"
 #include "ImTimer.h"
 #include "glide.h"
-#include "leds.h"
+#include "display.h"
 #include "knob.h"
 #include "patternLoad.h"
 #include "MemoryFree.h"
