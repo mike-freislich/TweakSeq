@@ -1,6 +1,5 @@
 #ifndef MY_GLIDE
 #define MY_GLIDE
-//#include "spline.h"
 
 const uint8_t CURVE_RESOLUTION = 30;
 
@@ -30,20 +29,10 @@ private:
   int16_t glideScale;  // pitch range
   CurveType curveType = CurveType::CURVE_B;
 
-  //uint16_t *curveData = pgm_get_far_address(curveDataAx);
-  //Spline* spline;
 public:
-  Glide()
-  {
-    //spline = new Spline(CURVE_RESOLUTION);
-    this->setCurve(CURVE_B);
-  }
+  Glide() { this->setCurve(CURVE_B); }
 
-  void setCurve(CurveType curveType)
-  {
-    this->curveType = curveType;
-    //spline->setCurve(curveType);
-  }
+  void setCurve(CurveType curveType) { this->curveType = curveType; }
 
   void viewCurveData()
   {
@@ -71,27 +60,20 @@ public:
     if ((glideScale == 0) || (portamento == 0))
       return pitch2;
 
-    unsigned long now = millis();
-    unsigned long elapsed = now - startTime;
+    uint32_t now = millis();
+    uint32_t elapsed = now - startTime;
 
-    if (elapsed <= portamento)
-    { // ---- gliding
+    if (elapsed <= portamento) // ---- gliding
+    {
       float position = (float)elapsed / (float)portamento;
-      //int pitch = pitch1 + spline->getPointAtX(position) * glideScale;
-      uint16_t pitch = pitch1 + getPointAtX(position) * glideScale;
+      int pitch = pitch1 + getPointAtX(position) * glideScale;
       return pitch;
     }
-    else
-    {
-      return pitch2; // ---- glide complete
-    }
+    else // ---- glide complete
+      return pitch2;
   }
 
-  double getPointAtX(double xPercent)
-  {
-    //return ConstrainedSpline((double *)curveDataAx, (double *)curveDataAy, CURVE_RESOLUTION, xPercent * CURVE_RESOLUTION);
-    return SmoothStep(xPercent * CURVE_RESOLUTION);
-  }
+  double getPointAtX(double xPercent) { return SmoothStep(xPercent * CURVE_RESOLUTION); }
 
   float getCurveX(uint8_t k)
   {

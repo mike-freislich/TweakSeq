@@ -5,13 +5,16 @@
 #include "glide.h"
 #include "controls.h"
 #include "memory.h"
-#include "dac.h"
+
+#pragma region CONSTANTS / ENUMS
 
 const uint16_t MAXTEMPO = 8000;
 const float TEMPODIV = 80.0;
 
-// SEQUENCER
-MP4822 dac;
+#if (GRAPHING)
+uint16_t serialCounter = 0;
+#endif
+
 enum PlayModes : byte
 {
   FORWARD = 1,
@@ -38,15 +41,16 @@ enum SequencerState
   MODE_BANKSELECT,
   MODE_PATTERNSELECT
 };
-bool currentMode = MODE_SEQUENCER;
 
+#pragma endregion
+
+SequencerState currentMode = MODE_SEQUENCER;
 ImTimer bpmClock;
 ImTimer gateTimer;
 ImTimer clockLedTimer;
 
 class Sequencer
 {
-
 private:
   int bpmMilliseconds;
   ImTimer *_bpmClock = nullptr;
@@ -117,7 +121,7 @@ public:
   void setTranspose(short direction)
   {
     if (direction != 0)
-      transpose = constrain(this->transpose + direction, -24, 24);            
+      transpose = constrain(this->transpose + direction, -24, 24);
   }
 
   /* ---------------- CLOCK HANDLING  ----------------
@@ -153,7 +157,7 @@ public:
     if (fromClock == clockMode)
     {
       _clockLedTimer->start(once, 20);
-      ioSet(ledClock, true);
+      setLedState(ledClock, ledON);
       sendClockSignal(true);
       beat();
     }
@@ -161,7 +165,7 @@ public:
 
   void clockLedOff()
   {
-    ioSet(ledClock, false);
+    setLedState(ledClock, ledOFF);
     sendClockSignal(false);
   }
 
@@ -169,14 +173,14 @@ public:
   {
     gateTimer.start(once, gateLength / 100.0 * getTempo());
     gateOpen = 1;
-    ioSet(outGate, true);
+    setLedState(outGate, ledON);
     setLedState(ledGate, ledON);
   }
 
   void closeGate()
   {
     gateOpen = 0;
-    ioSet(outGate, false);
+    setLedState(outGate, ledOFF);
     setLedState(ledGate, ledOFF);
   }
 
@@ -190,13 +194,10 @@ public:
   void play()
   {
     isPaused = false;
-    ioSet(ledPLAY, true);
+    setLedState(ledPLAY, ledON);
   }
 
-  bool isStepEditing()
-  {
-    return getLedState(ledPLAY) == ledFLASH;
-  }
+  bool isStepEditing() { return getLedState(ledPLAY) == ledFLASH; }
 
   short selectStep(short knobDirection)
   {
@@ -220,7 +221,6 @@ public:
 
   void beat()
   {
-
     if (!isPaused)
     {
       currentStep = nextStep(currentStep);
@@ -377,7 +377,6 @@ public:
     {
       openGate();
       glide.begin(this->getTempo(), portamento, previousNote.voltage, currentNote.voltage);
-      cvOut(0, glide.getPitch());
     }
 
     printData(currentNote);
@@ -393,7 +392,6 @@ public:
 
     openGate();
     glide.begin(this->getTempo(), portamento, previousNote.voltage, currentNote.voltage);
-    cvOut(0, glide.getPitch());
 
     if (isStepEditing())
     {
@@ -412,55 +410,38 @@ public:
     stepForward();
   }
 
-  void cvOut(byte channel, int v)
+  uint16_t getPitchCV()
   {
-    String errmsg = "";
-    dac.DAC_set(constrain(v + (transpose * 40),0,3840), channel, 0, DAC_CS, errmsg);
-  }
-
-  void updateDAC()
-  {
-    int voltage = glide.getPitch();
-    cvOut(0, voltage);
-
 #if (GRAPHING)
     serialCounter++;
-    serialCounter %= 8;
+    serialCounter %= 100;
     if (serialCounter == 0)
     {
-
       int GRAPHSCALE = 8;
-      /*
-        Serial.print("octave:");
-        Serial.print(octave * 1000);
-        Serial.print(",voltage-A:");
-        Serial.print(voltage * 2.083);
-        Serial.print(",gate:");
-        Serial.print(gateOpen);
-        Serial.print(",encoderBtn:");
-        Serial.print(analogRead(BUTTONS_ENCODER) * GRAPHSCALE);
-        Serial.print(",funcBtn:");
-        Serial.print(analogRead(BUTTONS_FUNC) * GRAPHSCALE);
-        Serial.print(",black:");
-        Serial.print(analogRead(BUTTONS_KBD_BLACK) * GRAPHSCALE);
-        Serial.print(",white:");
-        Serial.print(analogRead(BUTTONS_KBD_WHITE) * GRAPHSCALE);
-        Serial.println();
-        */
+
+      char buffer[100];
+      sprintf(buffer, "oct:%d voltage:%d\t gate:%d encBtn:%d funcBtn:%d black:%d white:%d",
+              octave * 1000,
+              (int)(voltage * 2.083),
+              gateOpen,
+              analogRead(BUTTONS_ENCODER) * GRAPHSCALE,
+              analogRead(BUTTONS_FUNC) * GRAPHSCALE,
+              analogRead(BUTTONS_KBD_BLACK) * GRAPHSCALE,
+              analogRead(BUTTONS_KBD_WHITE) * GRAPHSCALE);
+      Serial.println(buffer);
     }
 #endif
+    return glide.getPitch() + transpose * 40;
   }
 
   void printData(Note &note)
   {
-#if (LOGGING)
-/*
+    /*
       char buffer[100];
       sprintf(buffer, "[BPM: %04d ] - step: %02d, octave: %u, note: %u, voltage: %04u, \trest:%d, tie:%d",
               bpm, currentStep, note.octave, note.pitch, note.voltage, note.isRest, note.isTie);
       Serial.println(buffer);
       */
-#endif
   }
 };
 

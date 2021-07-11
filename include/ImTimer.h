@@ -22,7 +22,7 @@ class ImTimer {
 
     void (*tickHandler)();
 
-    void init(ImTimerState state, unsigned long duration, void (*tickHandler)()) {
+    void init(ImTimerState state, unsigned long duration, void (*tickHandler)()) {            
       this->prevState = this->state;
       this->lastTick = millis();
       this->duration = duration;
@@ -31,10 +31,13 @@ class ImTimer {
     }
 
   public:
+    
     ImTimer() {}
     ImTimer(void (*tickHandler)()) {
       setTickHandler(tickHandler);
     }
+
+    bool isRunning() { return state == once || state == looping; }
 
     void setTickHandler(void (*tickHandler)()) {
       this->tickHandler = tickHandler;

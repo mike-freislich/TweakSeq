@@ -1,6 +1,8 @@
-#define LOGGING false
+#define LOGGING true
 #define GRAPHING false
+#define SHOWMEM false
 
+#include <Arduino.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "sequencer.h"
@@ -14,6 +16,7 @@
 #include "patternLoad.h"
 #include "MemoryFree.h"
 
+#pragma region FUNCTION HEADERS
 /* --------------- FUNCTION HEADERS -----------------
 */
 
@@ -27,42 +30,47 @@ void handleRightRotaryEncoder();
 void handlePianoKeys();
 void updateControls();
 void showFreeMemory(uint8_t i);
+void cvOut(byte channel, uint16_t v);
+#pragma endregion
 
+#pragma region GLOBAL VARS
 /* ---------------- GLOBAL VARS ------------------
 */
 
+MP4822 dac;
 Sequencer *seq = nullptr;
 void bpmClockCallback() { seq->bpmClockTick(); }
 void gateTimerCallback() { seq->closeGate(); }
 void clockLedTimerCallback() { seq->clockLedOff(); }
 void interruptCallback() { seq->externalClockTrigger(); }
 
-/* ---------------- SETUP ----------------
-*/
+#pragma endregion
+
+#pragma region SETUP
+// ---------------- SETUP ----------------
+
 void setup()
 {
     Serial.begin(115200);
 #if (LOGGING)
-    Serial.println("Loading...");
-#endif    
+    //Serial.println("Loading...");
+#endif
     showFreeMemory(1);
     setupSequencer();
-    showFreeMemory(2);
     setupLeds();
-    dac.init();
     setupIO();
     setupKnobs();
-    showFreeMemory(6);
-
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
     bpmClock.start(looping, 60.0 / 120 * 1000, bpmClockCallback);
     showFreeMemory(7);
 }
 
-void showFreeMemory(uint8_t i)
+void cvOut(byte channel, uint16_t v) { dac.DAC_set(channel, v); }
+
+void showFreeMemory(uint8_t i = 99)
 {
-#if (LOGGING)
-    Serial.print(F("freemem[("));
+#if (SHOWMEM)
+    Serial.print(F("freemem["));
     Serial.print(i);
     Serial.print(F("]="));
     Serial.println(freeMemory());
@@ -74,9 +82,8 @@ void setupSequencer()
     bpmClock.setTickHandler(bpmClockCallback);
     gateTimer.setTickHandler(gateTimerCallback);
     clockLedTimer.setTickHandler(clockLedTimerCallback);
-
     seq = new Sequencer(&bpmClock, &gateTimer, &clockLedTimer);
-    seq->setBpmMilliseconds(140);
+    seq->setBpmMilliseconds(140);    
 }
 
 void setupKnobs()
@@ -95,12 +102,12 @@ void setupKnobs()
     knob[0]->setValue(120 / 10); // bpmMilliseconds
 
     knob[1] = new Knob(1, encoderButtons, KNOB2_A, KNOB2_B);
-    knob[1]->setRange(ledOFF, 0, 1, 5);  // play mode
-    knob[1]->setRange(ledOFF, 1, 0, 24); // glide time
+    knob[1]->setRange(ledOFF, 0, 1, 5);    // play mode
+    knob[1]->setRange(ledOFF, 1, 0, 24);   // glide time
     knob[1]->setRange(ledOFF, 2, -24, 24); // pitch
-    knob[1]->setRange(ledON, 0, 1, 4);   // play mode
-    knob[1]->setRange(ledON, 1, 0, 24);  // glide time
-    knob[1]->setRange(ledON, 2, 1, 12);  // pitch
+    knob[1]->setRange(ledON, 0, 1, 4);     // play mode
+    knob[1]->setRange(ledON, 1, 0, 24);    // glide time
+    knob[1]->setRange(ledON, 2, 1, 12);    // pitch
     knob[1]->addModes(new KnobFunction[6]{
         PlayMode, GlideTime, Pitch,
         PlayMode, GlideTime, Pitch});
@@ -120,20 +127,42 @@ void setupKnobs()
     knob[2]->setValue(16);
 }
 
+#pragma endregion
+
+#pragma region MAIN LOOP
 /* ---------------- LOOP ----------------
 */
 void loop()
-{
+{    
     bpmClock.update();
     gateTimer.update();
     clockLedTimer.update();
-    seq->updateDAC();
+    cvOut(0,seq->getPitchCV());
     updateControls();
     updateDisplay();
 }
 
-/* ---------------- CONTROLS HANDLING  ----------------
-*/
+#pragma endregion
+
+#pragma region CONTROLS HANDLING
+// ---------------- CONTROLS HANDLING  ----------------
+
+void updateControls()
+{
+    encoderButtons.update();
+    handleEncoderButtons();
+
+    handleLeftRotaryEncoder();
+    handleMiddleRotaryEncoder();
+    handleRightRotaryEncoder();
+
+    funcButtons.update();
+    handleFunctionButtons();
+
+    pianoBlack.update();
+    pianoWhite.update();
+    handlePianoKeys();
+}
 
 void handleFunctionButtons()
 {
@@ -200,11 +229,28 @@ void handleEncoderButtons()
     {
         knob[i]->update();
         if (encoderButtons.onPress(i))
-        {
             knob[i]->nextMode();
-        }
     }
 }
+
+void handlePianoKeys()
+{
+    for (byte i = 0; i < KBDW_BUTTONS_TOTAL; i++)
+        if (pianoWhite.onPress(i))
+        {
+            seq->pianoKeyPressed(pitchIndexWhite[i]);
+            break;
+        }
+
+    for (byte i = 0; i < KBDB_BUTTONS_TOTAL; i++)
+        if (pianoBlack.onPress(i))
+        {
+            seq->pianoKeyPressed(pitchIndexBlack[i]);
+            break;
+        }
+}
+
+#pragma region ROTARY ENCODERS
 
 void handleLeftRotaryEncoder()
 {
@@ -222,19 +268,12 @@ void handleLeftRotaryEncoder()
             uint16_t newTempo;
             int16_t steps = k->getRangeMax() - k->getRangeMin();
             int16_t precisionPoint = steps / 2.0 + (k->getRangeMin() - 1);
-#if (LOGGING)
-            Serial.print(F("num steps: "));
-            Serial.print(steps);
+
+            // WHAT THE FUCK?
             Serial.print(F("\thalfway: "));
-            Serial.println(precisionPoint);
-#endif
+            
             if (value <= precisionPoint)
-            {
                 newTempo = k->getRangeMin() + ((value - k->getRangeMin()) * 25);
-#if (LOGGING)
-                Serial.print(F("first half: "));
-#endif
-            }
             else
             {
                 int16_t nonLinearSteps = k->getRangeMax() - precisionPoint;
@@ -242,15 +281,9 @@ void handleLeftRotaryEncoder()
                 newTempo = value * factor * TEMPODIV;
                 newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);
                 //newTempo = max(newTempo, precisionPoint);
-#if (LOGGING)                
-                Serial.print(F("second half: "));
-#endif                
             }
-#if (LOGGING)               
-            Serial.println(newTempo);
-#endif            
             seq->setBpmMilliseconds(newTempo);
-            setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax(), DISP_TIMEOUT);
+            setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax(), DIALOG_TIMEOUT);
             break;
         }
         case 1:
@@ -267,7 +300,7 @@ void handleLeftRotaryEncoder()
 
             case ledON: // SHIFT-Brightness
                 setBrightness(value * 5);
-                setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax(), DISP_TIMEOUT);
+                setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax(), DIALOG_TIMEOUT);
                 break;
 
             case ledFLASH: // not assigned
@@ -279,10 +312,11 @@ void handleLeftRotaryEncoder()
         case 2: // Gate Length
         {
             seq->setGateLength(4 * value);
-            setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax(), DISP_TIMEOUT);
+            setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax(), DIALOG_TIMEOUT);
             break;
         }
         }
+        showFreeMemory();
     }
 }
 
@@ -307,12 +341,13 @@ void handleMiddleRotaryEncoder()
             setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
 
-        case 2: // pitch            
+        case 2: // pitch
             seq->setTranspose(k->direction());
             setValuePicker(seq->getTranspose(), k->getRangeMin(), k->getRangeMax());
             break;
         }
-    }    
+        showFreeMemory();
+    }
 }
 
 void handleRightRotaryEncoder()
@@ -327,56 +362,23 @@ void handleRightRotaryEncoder()
 
         case 0: // pattern length
             seq->setPatternLength(value);
-            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax(), DISP_TIMEOUT);
+            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax(), DIALOG_TIMEOUT);
             break;
 
         case 1: // glide shape
             seq->setCurveShape(value);
-            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax(), DISP_TIMEOUT);
+            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax(), DIALOG_TIMEOUT);
             break;
 
         case 2: // octave
             seq->setOctave(value);
-            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax(), DISP_TIMEOUT);
+            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax(), DIALOG_TIMEOUT);
             break;
         }
+        showFreeMemory();
     }
 }
 
-void handlePianoKeys()
-{
-    for (byte i = 0; i < KBDW_BUTTONS_TOTAL; i++)
-    {
-        if (pianoWhite.onPress(i))
-        {
-            seq->pianoKeyPressed(pitchIndexWhite[i]);
-            break;
-        }
-    }
+#pragma endregion
 
-    for (byte i = 0; i < KBDB_BUTTONS_TOTAL; i++)
-    {
-        if (pianoBlack.onPress(i))
-        {
-            seq->pianoKeyPressed(pitchIndexBlack[i]);
-            break;
-        }
-    }
-}
-
-void updateControls()
-{
-    encoderButtons.update();
-    handleEncoderButtons();
-
-    handleLeftRotaryEncoder();
-    handleMiddleRotaryEncoder();
-    handleRightRotaryEncoder();
-
-    funcButtons.update();
-    handleFunctionButtons();
-
-    pianoBlack.update();
-    pianoWhite.update();
-    handlePianoKeys();
-}
+#pragma endregion
