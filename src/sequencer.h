@@ -1,3 +1,5 @@
+
+
 #ifndef MY_SEQUENCER
 #define MY_SEQUENCER
 #include <Arduino.h>
@@ -64,15 +66,15 @@ private:
   short transpose = 0;
 
   uint16_t bpm = 120;
-  byte curveIndex = CURVE_B;
+  uint8_t curveIndex = CURVE_B;
   float portamento = 0.2;
 
-  byte patternLength = 16;
+  uint8_t patternLength = 16;
   short direction = 1;
 
-  byte gateLength = 10;
-  byte gateOpen = 0;
-  byte octave = 1;
+  uint8_t gateLength = 10;
+  uint8_t gateOpen = 0;
+  uint8_t octave = 1;
 
 public:
   Sequencer(ImTimer *bpm, ImTimer *gate, ImTimer *clockLed)
@@ -229,12 +231,12 @@ public:
     }
   }
 
-  byte nextStep(int x)
+  uint8_t nextStep(int x)
   {
     if (patternLength <= 1)
       return 0;
 
-    byte retVal;
+    uint8_t retVal;
     switch (playMode)
     {
     case FORWARD:
@@ -272,7 +274,7 @@ public:
   {
     // oct = 1 to 8
     // note = 1 to 12  C,C#,D,D#,E,F,F#,G,G#,A,A#,B
-    byte vInc = 40; // 0.040V
+    uint8_t vInc = 40; // 0.040V
     uint16_t voltage = constrain(vInc * (12 * (oct - 1) + 1) + (note - 1) * vInc, 0, 3840);
     return voltage;
   }
@@ -283,11 +285,11 @@ public:
     glide.setCurve(static_cast<CurveType>(curveIndex));
   }
 
-  Note getKeyboardNote(byte keyPressed)
+  Note getKeyboardNote(uint8_t keyPressed)
   {
     Note note;
     note.stepNumber = currentStep;
-    byte stepData = ((octave - 1) * 12) + keyPressed;
+    uint8_t stepData = ((octave - 1) * 12) + keyPressed;
     note.midiNote = stepData + MIDI_OFFSET;
     note.isRest = (stepData == REST);
     note.isTie = (stepData == TIE);
@@ -301,7 +303,7 @@ public:
   {
     Note note;
     note.stepNumber = atIndex;
-    byte stepData = pattern[atIndex];
+    uint8_t stepData = pattern[atIndex];
 
     note.isRest = (stepData == REST);
     note.isTie = (stepData == TIE);
@@ -334,7 +336,7 @@ public:
   void setPatternNote(Note note)
   {
 
-    byte noteData;
+    uint8_t noteData;
 
     if (note.isRest)
     {
@@ -385,7 +387,7 @@ public:
       */
   }
 
-  void pianoKeyPressed(byte keyPressed)
+  void pianoKeyPressed(uint8_t keyPressed)
   {
     previousNote = currentNote;
     currentNote = getKeyboardNote(keyPressed);

@@ -13,13 +13,13 @@ public:
   }
 
   //function to set state of DAC - input value between 0-4095
-  void DAC_set(byte channel, uint16_t inputVoltage, byte gain = 0)
+  void DAC_set(uint8_t channel, uint16_t inputVoltage, uint8_t gain = 0)
   {
     uint16_t input = constrain(inputVoltage, 0, 4000);
 
     //DAC_sel choose which DAC channel you want to write to A or B
     //Gain_sel choose your gain: H=2xVref and L=1xVref
-    byte MSB, LSB; //most sig, least sig bytes and config info
+    uint8_t MSB, LSB; //most sig, least sig bytes and config info
 
     //convert decimal input to binary stored in two bytes
     MSB = (input >> 8) & 0xFF; //most sig byte

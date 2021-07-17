@@ -6,7 +6,7 @@
 #include <RotaryEncoder.h>
 #include "display.h"
 
-enum KnobFunction:byte {
+enum KnobFunction:uint8_t {
   TempoAdjust   = 16,
   StepSelect,
   GateTime,
@@ -29,11 +29,11 @@ class Knob {
     AnalogMultiButton* amButton;
     RotaryEncoder* encoder;
     KnobFunction* knobModes;    
-    byte index = 0;    
-    byte modeIndex = 0;
-    byte modeShift() {
+    uint8_t index = 0;    
+    uint8_t modeIndex = 0;
+    uint8_t modeShift() {
     
-      byte value = getLedState(ledSHIFT);
+      uint8_t value = getLedState(ledSHIFT);
       if (value > 1) value = 1;
       return value;
       }
@@ -50,18 +50,18 @@ class Knob {
       return newPos;    
     }
 
-    KnobState* getKnobState(byte mode) {
+    KnobState* getKnobState(uint8_t mode) {
       return &knobState[modeShift()][mode];
     }
     
   public:
-    Knob(byte index, AnalogMultiButton amButton, byte pin1, byte pin2) {
+    Knob(uint8_t index, AnalogMultiButton amButton, uint8_t pin1, uint8_t pin2) {
       encoder = new RotaryEncoder(pin2, pin1, RotaryEncoder::LatchMode::FOUR3);
       this->index = index;
       this->amButton = &amButton;
     }
 
-    void setRange(LedState shift, byte forMode, short newRangeMin, short newRangeMax) {      
+    void setRange(LedState shift, uint8_t forMode, short newRangeMin, short newRangeMax) {      
       KnobState* k = &knobState[shift][forMode];
       k->rangeMin = newRangeMin;
       k->rangeMax = newRangeMax;
@@ -81,19 +81,19 @@ class Knob {
       setMode(modeIndex);     
     }
 
-    void setMode(byte mode) {      
+    void setMode(uint8_t mode) {      
       modeIndex = mode % 3;           
       encoder->setPosition(getKnobState(modeIndex)->pos);
       setLED();                
 }
     void setLED() {
-      for (byte i = 0; i < 3; i ++) {
+      for (uint8_t i = 0; i < 3; i ++) {
         setLedState(knobModes[i], ledOFF); 
       }
       setLedState(knobModes[modeIndex], ledON);
     }
 
-    byte getMode() {
+    uint8_t getMode() {
       return modeIndex;
     }
 
@@ -134,7 +134,7 @@ class Knob {
     short getRangeMin() { return getKnobState(modeIndex)->rangeMin; }
     short getRangeMax() { return getKnobState(modeIndex)->rangeMax; }
 
-    byte getIndex() { return index; }
+    uint8_t getIndex() { return index; }
 };
 
 Knob* knob[3];

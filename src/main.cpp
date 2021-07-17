@@ -1,3 +1,7 @@
+/*
+ - 
+*/
+
 #define LOGGING false
 #define GRAPHING false
 #define SHOWMEM false
@@ -30,16 +34,15 @@ void handleRightRotaryEncoder();
 void handlePianoKeys();
 void updateControls();
 void showFreeMemory(uint8_t i);
-void cvOut(byte channel, uint16_t v);
+void cvOut(uint8_t channel, uint16_t v);
 #pragma endregion
 
 #pragma region GLOBAL VARS
 /* ---------------- GLOBAL VARS ------------------
 */
 
-
 MP4822 dac;
-Sequencer *seq = nullptr;
+Sequencer *seq;
 void bpmClockCallback() { seq->bpmClockTick(); }
 void gateTimerCallback() { seq->closeGate(); }
 void clockLedTimerCallback() { seq->clockLedOff(); }
@@ -53,7 +56,7 @@ void interruptCallback() { seq->externalClockTrigger(); }
 void setup()
 {
     Serial.begin(115200);
-    String mytest = String(F("Loading...")); // required!!!!
+    //String mytest = String(F("Loading...")); // required!!!!
 #if (LOGGING)
     Serial.println(mytest);
 #endif
@@ -67,7 +70,7 @@ void setup()
     showFreeMemory(7);
 }
 
-void cvOut(byte channel, uint16_t v) { dac.DAC_set(channel, v); }
+void cvOut(uint8_t channel, uint16_t v) { dac.DAC_set(channel, v); }
 
 void showFreeMemory(uint8_t i = 99)
 {
@@ -85,7 +88,7 @@ void setupSequencer()
     gateTimer.setTickHandler(gateTimerCallback);
     clockLedTimer.setTickHandler(clockLedTimerCallback);
     seq = new Sequencer(&bpmClock, &gateTimer, &clockLedTimer);
-    seq->setBpmMilliseconds(140);    
+    seq->setBpmMilliseconds(140);
 }
 
 void setupKnobs()
@@ -135,11 +138,11 @@ void setupKnobs()
 /* ---------------- LOOP ----------------
 */
 void loop()
-{    
+{
     bpmClock.update();
     gateTimer.update();
     clockLedTimer.update();
-    cvOut(0,seq->getPitchCV());
+    cvOut(0, seq->getPitchCV());
     updateControls();
     updateDisplay();
 }
@@ -168,14 +171,31 @@ void updateControls()
 
 void handleFunctionButtons()
 {
+        
     // FUNCTION BUTTONS
-    if (funcButtons.onPress(SHIFT)) {
-        LedState newState =  (getLedState(ledSHIFT) == ledON) ? ledOFF : ledON;
-        setLedState(ledSHIFT, newState);    
+    if (funcButtons.onPress(SHIFT))
+    {
+        /*
+        Serial.print("shift-pressed");
+        Serial.print("\tshift: ");
+        Serial.print(FUNCTIONS::SHIFT);
+        Serial.print("\tplay: ");
+        Serial.println(FUNCTIONS::PLAY);
+        */
+        LedState newState = (getLedState(ledSHIFT) == ledON) ? ledOFF : ledON;
+        setLedState(ledSHIFT, newState);
     }
 
     if (funcButtons.onPress(PLAY))
-    {                
+    {
+        /*
+        Serial.print("play-pressed");
+        Serial.print("\tshift: ");
+        Serial.print(FUNCTIONS::SHIFT);
+        Serial.print("\tplay: ");
+        Serial.println(FUNCTIONS::PLAY);
+        Serial.println("play");
+        */
         if (getLedState(ledSHIFT) == ledON)
         {
             bool recordState = (getLedState(ledPLAY) != ledFLASH); // Toggle recording
@@ -199,10 +219,10 @@ void handleFunctionButtons()
 
     if (funcButtons.onPress(ENTER))
     {
-        if (seq->isStepEditing())         
-            seq->patternInsertRest();        
-        else        
-            showFreeMemory(99);        
+        if (seq->isStepEditing())
+            seq->patternInsertRest();
+        else
+            showFreeMemory(99);
     }
 
     if (funcButtons.onPress(SAVE))
@@ -225,7 +245,7 @@ void handleFunctionButtons()
 
 void handleEncoderButtons()
 {
-    for (byte i = 0; i < 3; i++)
+    for (uint8_t i = 0; i < 3; i++)
     {
         knob[i]->update();
         if (encoderButtons.onPress(i))
@@ -235,14 +255,14 @@ void handleEncoderButtons()
 
 void handlePianoKeys()
 {
-    for (byte i = 0; i < KBDW_BUTTONS_TOTAL; i++)
+    for (uint8_t i = 0; i < KBDW_BUTTONS_TOTAL; i++)
         if (pianoWhite.onPress(i))
         {
             seq->pianoKeyPressed(pitchIndexWhite[i]);
             break;
         }
 
-    for (byte i = 0; i < KBDB_BUTTONS_TOTAL; i++)
+    for (uint8_t i = 0; i < KBDB_BUTTONS_TOTAL; i++)
         if (pianoBlack.onPress(i))
         {
             seq->pianoKeyPressed(pitchIndexBlack[i]);
@@ -268,7 +288,7 @@ void handleLeftRotaryEncoder()
             uint16_t newTempo;
             int16_t steps = k->getRangeMax() - k->getRangeMin();
             int16_t precisionPoint = steps / 2.0 + (k->getRangeMin() - 1);
-            
+
             if (value <= precisionPoint)
                 newTempo = k->getRangeMin() + ((value - k->getRangeMin()) * 25);
             else

@@ -100,20 +100,20 @@ public:
         if (steps != 16)
             addDisplayBorders();
 
-        byte offset = (steps == 16) ? 0 : 3;
+        uint8_t offset = (steps == 16) ? 0 : 3;
         if (low < 0)
             bitSet(displayData, percentValue - 1 + offset);
         else
-            for (byte i = 0; i < percentValue; i++)
+            for (uint8_t i = 0; i < percentValue; i++)
                 bitSet(displayData, i + offset);
     }
 
     void writeoutDisplayBuffer(uint32_t *uiData, uint32_t *uiFlashData)
     {
-        *uiData &= ~(uint32_t)0xFFFF;
-        *uiFlashData &= ~(uint32_t)0xFFFF;
-        *uiData |= (uint32_t)displayData;
-        *uiFlashData |= (uint32_t)flashData;
+        *uiData &= (uint32_t)0xFFFF0000;
+        *uiFlashData &= (uint32_t)0xFFFF0000;
+        *uiData |= displayData;
+        *uiFlashData |= flashData;
     }
 };
 

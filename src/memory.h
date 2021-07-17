@@ -12,21 +12,21 @@
  */
 
 // BANKS
-const byte BANK_MAX = 4;            // number of pattern banks
-byte bank = 0;
+const uint8_t BANK_MAX = 4;            // number of pattern banks
+uint8_t bank = 0;
 
 // PATTERNS
-const byte PATTERN_MAX = 8;         // number of patterns
-const byte PATTERN_STEP_MAX = 16;   // number of steps per pattern
-byte currentPattern = 0;
+const uint8_t PATTERN_MAX = 8;         // number of patterns
+const uint8_t PATTERN_STEP_MAX = 16;   // number of steps per pattern
+uint8_t currentPattern = 0;
 
 
-const byte REST = 100;
-const byte TIE  = REST + 1;
-const byte MIDI_OFFSET = 23;
-byte pattern[] = {0, 12, 24, 36, 48, 60, 72, 84, 36, 39, 41, 39, 36, 40, 41, 95};
+const uint8_t REST = 100;
+const uint8_t TIE  = REST + 1;
+const uint8_t MIDI_OFFSET = 23;
+uint8_t pattern[] = {0, 12, 24, 36, 48, 60, 72, 84, 36, 39, 41, 39, 36, 40, 41, 95};
 
-void savePattern(uint8_t toSlot, byte inBank) {
+void savePattern(uint8_t toSlot, uint8_t inBank) {
   int slotLocation = (toSlot * PATTERN_STEP_MAX) + (inBank * PATTERN_STEP_MAX * PATTERN_MAX);
   uint16_t offset;
   for (int i = 0; i < PATTERN_STEP_MAX; i++) {
@@ -36,9 +36,9 @@ void savePattern(uint8_t toSlot, byte inBank) {
   }
 }
 
-void loadPattern(uint8_t fromSlot, byte inBank) {
+void loadPattern(uint8_t fromSlot, uint8_t inBank) {
   int slotLocation = (fromSlot * PATTERN_STEP_MAX) + (inBank * PATTERN_STEP_MAX * PATTERN_MAX);
-  for (byte i = 0; i < PATTERN_STEP_MAX; i++)
+  for (uint8_t i = 0; i < PATTERN_STEP_MAX; i++)
     pattern[i] = EEPROM.read(slotLocation + i);
 }
 

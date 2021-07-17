@@ -36,7 +36,7 @@ public:
 
   void viewCurveData()
   {
-    for (byte x = 0; x < 30; x++)
+    for (uint8_t x = 0; x < 30; x++)
     {
       Serial.print(curveDataAx[x]);
       Serial.print(",");

@@ -20,8 +20,8 @@ enum CurveType
 class Spline
 {
 private:
-  byte amp = 1;
-  byte samples = 30;
+  uint8_t amp = 1;
+  uint8_t samples = 30;
   float* xValues;
   float* yValues;
   CurveType curveType;
@@ -83,7 +83,7 @@ public:
     splineFromPoints(3, curve[curveType].x, curve[curveType].y, samples, amp, xValues, yValues);
 
     //Serial.print("x: ");
-    for (byte x = 0; x < 30; x++)
+    for (uint8_t x = 0; x < 30; x++)
     {
       Serial.print(xValues[x]);
       Serial.print(",");
@@ -91,7 +91,7 @@ public:
     Serial.println();
 
     Serial.print("y: ");
-    for (byte y = 0; y < 30; y++)
+    for (uint8_t y = 0; y < 30; y++)
     {
       Serial.print(yValues[y]);
       Serial.print(",");
