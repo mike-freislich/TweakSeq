@@ -164,15 +164,15 @@ void hideDialog()
 }
 
 void setValuePicker(int16_t value, int16_t low, int16_t high, uint16_t ms = DIALOG_TIMEOUT)
-{
+{  
   displayMode = DM_VALUE;
   if (!dialog)
     dialog = new Dialog(&dialogTimer, hideDialog);
   else
     dialog->setTimeout(ms);
-
-  dialog->setDisplayValue(value, low, high);
-  dialog->writeoutDisplayBuffer(&uiData, &flashData);
+  
+  dialog->setDisplayValue(value, low, high);  
+  dialog->writeoutDisplayBuffer(&uiData, &flashData);  
 }
 
 void updateDisplay()

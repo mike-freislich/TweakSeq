@@ -1,4 +1,4 @@
-#define LOGGING true
+#define LOGGING false
 #define GRAPHING false
 #define SHOWMEM false
 
@@ -37,6 +37,7 @@ void cvOut(byte channel, uint16_t v);
 /* ---------------- GLOBAL VARS ------------------
 */
 
+
 MP4822 dac;
 Sequencer *seq = nullptr;
 void bpmClockCallback() { seq->bpmClockTick(); }
@@ -52,8 +53,9 @@ void interruptCallback() { seq->externalClockTrigger(); }
 void setup()
 {
     Serial.begin(115200);
+    String mytest = String(F("Loading...")); // required!!!!
 #if (LOGGING)
-    //Serial.println("Loading...");
+    Serial.println(mytest);
 #endif
     showFreeMemory(1);
     setupSequencer();
@@ -167,11 +169,13 @@ void updateControls()
 void handleFunctionButtons()
 {
     // FUNCTION BUTTONS
-    if (funcButtons.onPress(SHIFT))
-        nextLedState(ledSHIFT);
+    if (funcButtons.onPress(SHIFT)) {
+        LedState newState =  (getLedState(ledSHIFT) == ledON) ? ledOFF : ledON;
+        setLedState(ledSHIFT, newState);    
+    }
 
     if (funcButtons.onPress(PLAY))
-    {
+    {                
         if (getLedState(ledSHIFT) == ledON)
         {
             bool recordState = (getLedState(ledPLAY) != ledFLASH); // Toggle recording
@@ -195,14 +199,10 @@ void handleFunctionButtons()
 
     if (funcButtons.onPress(ENTER))
     {
-        if (seq->isStepEditing())
-        { // STEP-EDIT : INSERT REST
-            seq->patternInsertRest();
-        }
-        else
-        {
-            showFreeMemory(99);
-        }
+        if (seq->isStepEditing())         
+            seq->patternInsertRest();        
+        else        
+            showFreeMemory(99);        
     }
 
     if (funcButtons.onPress(SAVE))
@@ -268,9 +268,6 @@ void handleLeftRotaryEncoder()
             uint16_t newTempo;
             int16_t steps = k->getRangeMax() - k->getRangeMin();
             int16_t precisionPoint = steps / 2.0 + (k->getRangeMin() - 1);
-
-            // WHAT THE FUCK?
-            Serial.print(F("\thalfway: "));
             
             if (value <= precisionPoint)
                 newTempo = k->getRangeMin() + ((value - k->getRangeMin()) * 25);

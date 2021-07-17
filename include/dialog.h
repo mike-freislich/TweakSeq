@@ -1,3 +1,5 @@
+#ifndef MY_DIALOG
+#define MY_DIALOG
 
 const uint16_t DIALOG_TIMEOUT = 1000;
 
@@ -56,9 +58,15 @@ public:
     {
         if (dialogTimer)
             dialogTimer->stop();
+
+        clearDisplayBuffer();
     }
 
-    void update() { dialogTimer->update(); }
+    void update()
+    {
+        if (dialogTimer)
+            dialogTimer->update();
+    }
 
     void setDisplayValue(int16_t value, int16_t low, int16_t high, bool timed = true, uint16_t timeout = DIALOG_TIMEOUT)
     {
@@ -101,10 +109,12 @@ public:
     }
 
     void writeoutDisplayBuffer(uint32_t *uiData, uint32_t *uiFlashData)
-    {        
+    {
         *uiData &= ~(uint32_t)0xFFFF;
         *uiFlashData &= ~(uint32_t)0xFFFF;
         *uiData |= (uint32_t)displayData;
         *uiFlashData |= (uint32_t)flashData;
     }
 };
+
+#endif

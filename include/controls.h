@@ -28,7 +28,6 @@ const uint8_t CLK_IN   = 2;    // External Clock input
 //const byte SCK    = 16;  // (MCP4822-P3)
 
 void setupIO() {
-  // Analog
   pinMode(BUTTONS_ENCODER, INPUT);
   pinMode(BUTTONS_FUNC, INPUT);
   pinMode(BUTTONS_KBD_BLACK, INPUT);
@@ -61,7 +60,6 @@ const uint8_t KBDW_BUTTONS_PIN = BUTTONS_KBD_WHITE;
 const uint8_t KBDW_BUTTONS_TOTAL = 7;
 const uint16_t KBDW_BUTTONS_VALUES[KBDW_BUTTONS_TOTAL] = {0, 236, 384, 486, 560, 616, 660};
 AnalogMultiButton pianoWhite(KBDW_BUTTONS_PIN, KBDW_BUTTONS_TOTAL, KBDW_BUTTONS_VALUES);
-
 
 
 #endif
