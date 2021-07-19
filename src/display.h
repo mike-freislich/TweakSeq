@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "ImTimer.h"
 #include "dialog.h"
+#include "uistate.h"
 
 #pragma region CONSTANTS / ENUMS
 const uint8_t outputEnablePin = 3; // Shift Register - pin 13
@@ -39,7 +40,7 @@ enum DisplayMode
 uint32_t uiData = 0, flashData = 0;
 bool flashState = false;
 bool didDisplayUpdate = false;
-DisplayMode displayMode = DM_SEQUENCE;
+//DisplayMode displayMode = DM_SEQUENCE;
 Dialog *dialog;
 
 ImTimer dialogTimer;
@@ -58,13 +59,13 @@ void clearSequenceLights();
 void setSequencerStep(uint8_t step);
 void setSequencerDisplay();
 void hideDialog();
-void setValuePicker(uint16_t value, uint16_t low, uint16_t high, uint16_t ms);
+void setValuePicker(int16_t value, int16_t low, int16_t high, bool timed, uint16_t ms);
 void updateDisplay();
 LedState getLedState(uint8_t ledIndex);
 void setLedState(uint8_t ledIndex, LedState state);
 LedState nextLedState(uint8_t ledIndex);
 void flashTimerTick();
-void setupLeds();
+void setupDisplay();
 #pragma endregion
 
 void setBrightness(uint8_t brightness) // 0 to 255
@@ -138,52 +139,42 @@ void updateShiftRegister(unsigned long data)
 
 void clearSequenceLights()
 {
-  uiData &= ~(uint32_t)0xFFFF;
-  flashData &= ~(uint32_t)0xFFFF;
+  uiData &= (uint32_t)0xFFFF0000;  
+  flashData &= (uint32_t)0xFFFF0000;
+  didDisplayUpdate = true;
+  //Serial.println(F("clear sequence lights"));
 }
 
 void setSequencerStep(uint8_t step)
 {
-  if (displayMode == DM_SEQUENCE)
+  if (!dialog->isVisible())
   {
     clearSequenceLights();
     setLedState(step % 16, ledON);
   }
 }
 
-void setSequencerDisplay()
-{
-  displayMode = DM_SEQUENCE;
-  clearSequenceLights();
-}
-
 void hideDialog()
 {
   dialog->hide();
-  setSequencerDisplay();
+  clearSequenceLights();     
 }
 
-void setValuePicker(int16_t value, int16_t low, int16_t high, uint16_t ms = DIALOG_TIMEOUT)
-{  
-  displayMode = DM_VALUE;
-  if (!dialog)
-    dialog = new Dialog(&dialogTimer, hideDialog);
-  else
-    dialog->setTimeout(ms);
-  
-  dialog->setDisplayValue(value, low, high);  
-  dialog->writeoutDisplayBuffer(&uiData, &flashData);  
+void setValuePicker(int16_t value, int16_t low, int16_t high, bool timed = true, uint16_t ms = DIALOG_TIMEOUT)
+{       
+  dialog->setDisplayValue(value, low, high, timed, ms);
+  dialog->show();
+  dialog->writeoutDisplayBuffer(&uiData, &flashData);
+  didDisplayUpdate = true;
 }
 
 void updateDisplay()
 {
   flashTimer.update();
+  dialog->update();
 
-  if (dialog)
-    dialog->update();
-
-  if (didDisplayUpdate || dialog->isVisible())
-    updateShiftRegister(uiData);
+  if (didDisplayUpdate) 
+    updateShiftRegister(uiData);      
 }
 
 LedState getLedState(uint8_t ledIndex)
@@ -237,7 +228,7 @@ void flashTimerTick()
   }
 }
 
-void setupLeds()
+void setupDisplay()
 {
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
@@ -246,6 +237,7 @@ void setupLeds()
 
   setBrightness(20);
   flashTimer.start(looping, 200, flashTimerTick);
+  dialog = new Dialog(&dialogTimer, hideDialog); 
 }
 
 #endif

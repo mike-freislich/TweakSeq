@@ -25,6 +25,7 @@ protected:
     ImTimer *dialogTimer;
     bool timed = false;
     uint16_t timeout;
+    bool visible = false;
 
 public:
     int16_t value;
@@ -40,12 +41,11 @@ public:
 
     virtual ~Dialog() {}
 
-    bool isVisible() { return dialogTimer->isRunning(); }
+    bool isVisible() { return this->visible; }
 
     void setTimeout(uint16_t timeout)
-    {
-        this->timeout = timeout;
-        dialogTimer->start(once, timeout);
+    {                
+        this->timeout = timeout;        
     }
 
     void clearDisplayBuffer()
@@ -54,21 +54,31 @@ public:
         flashData = 0;
     }
 
+    void show() {
+        if (this->timed)
+            this->dialogTimer->start(once, timeout, callback);       
+        else
+            this->dialogTimer->stop(); 
+
+        this->visible = true;                    
+    }
+
     void hide()
     {
+        Serial.println("hide");
+        visible = false;
         if (dialogTimer)
             dialogTimer->stop();
-
-        clearDisplayBuffer();
+        clearDisplayBuffer();                
     }
 
     void update()
     {
-        if (dialogTimer)
+        if (dialogTimer && this->timed)
             dialogTimer->update();
     }
 
-    void setDisplayValue(int16_t value, int16_t low, int16_t high, bool timed = true, uint16_t timeout = DIALOG_TIMEOUT)
+    void setDisplayValue(int16_t value, int16_t low, int16_t high, bool timed, uint16_t timeout)
     {
         this->timeout = timeout;
         this->value = value;
@@ -76,9 +86,7 @@ public:
         this->high = high;
         this->timed = timed;
 
-        if (timed)
-            dialogTimer->start(once, timeout, callback);
-
+        show();      
         bufferDisplay();
     }
 
@@ -114,6 +122,7 @@ public:
         *uiFlashData &= (uint32_t)0xFFFF0000;
         *uiData |= displayData;
         *uiFlashData |= flashData;
+        clearDisplayBuffer();
     }
 };
 

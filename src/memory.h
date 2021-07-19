@@ -13,13 +13,12 @@
 
 // BANKS
 const uint8_t BANK_MAX = 4;            // number of pattern banks
-uint8_t bank = 0;
+uint8_t memBank = 0;
 
 // PATTERNS
 const uint8_t PATTERN_MAX = 8;         // number of patterns
 const uint8_t PATTERN_STEP_MAX = 16;   // number of steps per pattern
-uint8_t currentPattern = 0;
-
+uint8_t memPattern = 0;
 
 const uint8_t REST = 100;
 const uint8_t TIE  = REST + 1;

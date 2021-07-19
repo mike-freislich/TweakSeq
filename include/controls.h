@@ -34,30 +34,30 @@ void setupIO() {
   pinMode(BUTTONS_KBD_WHITE, INPUT);
   pinMode(CLK_IN, INPUT_PULLUP);
   
-  setupLeds();
+  //setupDisplay();
 }
 
 const uint8_t pitchIndexWhite[7] = { 0, 2, 4, 5, 7, 9, 11 };
 const uint8_t pitchIndexBlack[5] = { 1, 3, 6, 8, 10 };
 
-const uint8_t ENC_BUTTONS_PIN = BUTTONS_ENCODER;
-const uint8_t ENC_BUTTONS_TOTAL = 3;
+const int8_t ENC_BUTTONS_PIN = BUTTONS_ENCODER;
+const int8_t ENC_BUTTONS_TOTAL = 3;
 const int ENC_BUTTONS_VALUES[ENC_BUTTONS_TOTAL] = {0, 340, 511};
 AnalogMultiButton encoderButtons(ENC_BUTTONS_PIN, ENC_BUTTONS_TOTAL, ENC_BUTTONS_VALUES);
 
 enum FUNCTIONS:uint8_t { SHIFT = 0, PLAY = 1, LOAD = 2, SAVE = 3, ENTER = 4};
-const uint8_t FUNC_BUTTONS_PIN = BUTTONS_FUNC;
-const uint8_t FUNC_BUTTONS_TOTAL = 5;
+const int8_t FUNC_BUTTONS_PIN = BUTTONS_FUNC;
+const int8_t FUNC_BUTTONS_TOTAL = 5;
 const int FUNC_BUTTONS_VALUES[FUNC_BUTTONS_TOTAL] = {0, 339, 510, 613, 682};
 AnalogMultiButton funcButtons(FUNC_BUTTONS_PIN, FUNC_BUTTONS_TOTAL, FUNC_BUTTONS_VALUES);
 
-const uint8_t KBDB_BUTTONS_PIN = BUTTONS_KBD_BLACK;
-const uint8_t KBDB_BUTTONS_TOTAL = 5;
+const int8_t KBDB_BUTTONS_PIN = BUTTONS_KBD_BLACK;
+const int8_t KBDB_BUTTONS_TOTAL = 5;
 const int KBDB_BUTTONS_VALUES[KBDB_BUTTONS_TOTAL] = {0, 236, 384, 486, 560};
 AnalogMultiButton pianoBlack(KBDB_BUTTONS_PIN, KBDB_BUTTONS_TOTAL, KBDB_BUTTONS_VALUES);
 
-const uint8_t KBDW_BUTTONS_PIN = BUTTONS_KBD_WHITE;
-const uint8_t KBDW_BUTTONS_TOTAL = 7;
+const int8_t KBDW_BUTTONS_PIN = BUTTONS_KBD_WHITE;
+const int8_t KBDW_BUTTONS_TOTAL = 7;
 const int KBDW_BUTTONS_VALUES[KBDW_BUTTONS_TOTAL] = {0, 236, 384, 486, 560, 616, 660};
 AnalogMultiButton pianoWhite(KBDW_BUTTONS_PIN, KBDW_BUTTONS_TOTAL, KBDW_BUTTONS_VALUES);
 
