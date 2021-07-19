@@ -1,5 +1,3 @@
-
-
 #ifndef MY_SEQUENCER
 #define MY_SEQUENCER
 #include <Arduino.h>
@@ -34,7 +32,7 @@ enum ClockMode
   CLK_INTERNAL,
   CLK_EXTERNAL
 };
-ClockMode clockMode = CLK_INTERNAL;
+ClockMode clockMode = ClockMode::CLK_INTERNAL;
 bool extClockTriggered = false;
 
 enum SequencerState
@@ -112,6 +110,11 @@ public:
     bpmClock.changeDuration(bpmMilliseconds);
   }
 
+  void setTempo(uint32_t milliseconds) {
+    bpmMilliseconds = milliseconds;
+    bpmClock.changeDuration(milliseconds);
+  }
+
   int getBpm() { return bpm; }
   void setGateLength(int value) { gateLength = value; }
   void setGlideTime(float value) { portamento = value; }
@@ -129,7 +132,11 @@ public:
   /* ---------------- CLOCK HANDLING  ----------------
     */
   void bpmClockTick()
-  {
+  {    
+    uint32_t elapsed = millis() - lastClockExt;
+    if (elapsed > 2000)
+      clockMode = ClockMode::CLK_INTERNAL;
+   
     internalClockTrigger();
   }
 
@@ -140,12 +147,20 @@ public:
 
   void externalClockTrigger()
   {
+    clockMode = ClockMode::CLK_EXTERNAL;
+
     unsigned long now = millis();
     unsigned long elapsed = now - lastClockExt;
-    if (elapsed > 30)
+
+    if (elapsed > 20)
     {
       lastClockExt = now;
       beatFrom(CLK_EXTERNAL);
+      setTempo(elapsed);
+    }
+
+    if (elapsed > 2000) {
+      clockMode = ClockMode::CLK_INTERNAL;
     }
   }
 
@@ -174,7 +189,7 @@ public:
   void openGate()
   {
     gateTimer.start(once, gateLength / 100.0 * getTempo());
-    gateOpen = 1;
+    gateOpen = 1;    
     setLedState(outGate, ledON);
     setLedState(ledGate, ledON);
   }

@@ -95,6 +95,9 @@ void sendGateSignal(bool value)
 
 void sendClockSignal(bool value)
 {
+  
+  Serial.print(F("clock: "));
+  Serial.println(value);
   ioSet(outClock, value);
 }
 
