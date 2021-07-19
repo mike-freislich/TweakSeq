@@ -67,7 +67,7 @@ void setup()
     showFreeMemory(7);
 }
 
-void cvOut(uint8_t channel, uint16_t v) { dac.DAC_set(channel, v); }
+void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
 
 void showFreeMemory(uint8_t i = 99)
 {

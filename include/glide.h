@@ -55,7 +55,7 @@ public:
     this->glideScale = pitch2 - pitch1;
   }
 
-  uint16_t getPitch()
+  int16_t getPitch()
   {
     if ((glideScale == 0) || (portamento == 0))
       return pitch2;
@@ -66,7 +66,7 @@ public:
     if (elapsed <= portamento) // ---- gliding
     {
       float position = (float)elapsed / (float)portamento;
-      int pitch = pitch1 + getPointAtX(position) * glideScale;
+      int16_t pitch = pitch1 + getPointAtX(position) * glideScale;
       return pitch;
     }
     else // ---- glide complete

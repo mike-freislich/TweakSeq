@@ -412,7 +412,7 @@ public:
     stepForward();
   }
 
-  uint16_t getPitchCV()
+  int16_t getPitchCV()
   {
 #if (GRAPHING)
     serialCounter++;
@@ -433,7 +433,7 @@ public:
       Serial.println(buffer);
     }
 #endif
-    return glide.getPitch() + transpose * 40;
+    return constrain(glide.getPitch() + transpose * 40, 0, 3850);
   }
 
   void printData(Note &note)
