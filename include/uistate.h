@@ -4,17 +4,14 @@
 enum UIState
 {
     SEQUENCER,
-    LOADING_BANK_SELECT,
-    LOADING_PATTERN_SELECT,
-    LOADING_COMPLETE,
-    SAVING_BANK_SELECT,
-    SAVING_PATTERN_SELECT,
-    SAVING_COMPLETE
+    SA_BANK_SELECT,
+    SA_PATTERN_SELECT,
+    SA_ACTION_COMPLETE,
 };
 UIState uiState = UIState::SEQUENCER;
 UIState uiLastState = uiState;
 
-bool stateChanged() {
+bool uiStateChanged() {
     bool changed = uiLastState != uiState;
     uiLastState = uiState;
     return changed;

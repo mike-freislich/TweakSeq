@@ -14,6 +14,7 @@
 #include "display.h"
 #include "knob.h"
 #include "patternLoad.h"
+#include "logger.h"
 
 #if (SHOWMEM)
 #include "MemoryFree.h"
@@ -34,6 +35,7 @@ void cvOut(uint8_t channel, uint16_t v);
 void updateLoading();
 void updateSaving();
 void updateKnobs();
+void updatePatternStorage();
 
 #pragma endregion
 
@@ -41,6 +43,7 @@ void updateKnobs();
 
 MP4822 dac;
 Sequencer *seq;
+StorageAction storageAction = StorageAction::LOAD_PATTERN;
 
 void bpmClockCallback() { seq->bpmClockTick(); }
 void gateTimerCallback() { seq->closeGate(); }
@@ -72,6 +75,7 @@ void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
 void showFreeMemory(uint8_t i = 99)
 {
 #if (SHOWMEM)
+
     Serial.print(F("freemem["));
     Serial.print(i);
     Serial.print(F("]="));
@@ -144,18 +148,10 @@ void loop()
     {
     case UIState::SEQUENCER:
         updateControls();
-        break;
-    case UIState::LOADING_BANK_SELECT:
-    case UIState::LOADING_PATTERN_SELECT:
-    case UIState::LOADING_COMPLETE:
-        updateLoading();
-        break;
-    case UIState::SAVING_BANK_SELECT:
-    case UIState::SAVING_PATTERN_SELECT:
-        updateSaving();
-        break;
-    case UIState::SAVING_COMPLETE:
-        break;
+    case UIState::SA_BANK_SELECT:
+    case UIState::SA_PATTERN_SELECT:
+    case UIState::SA_ACTION_COMPLETE:
+        updatePatternStorage();
     }
 
     updateDisplay();
@@ -165,95 +161,125 @@ void loop()
 
 #pragma region STATE LOADING / SAVING
 
+void selectBank(Knob *k, UIState nextState)
+{
+    k->update();
+
+    if (uiStateChanged())
+    {
+        Serial.println(F("select bank"));
+        k->setValue(memBank);
+        setLedState(ledENTER, LedState::ledFLASH);
+        for (byte i = 16; i < 25; i++)
+            setLedState(i, (i < 22) ? ledOFF : ledFLASH);
+        setLedState(16, ledFLASH);
+        setValuePicker(memBank, 0, 3, false);
+    }
+
+    if (k->didChange())
+    {
+        memBank = constrain(memBank + k->direction(), 0, BANK_MAX - 1);
+        Serial.print(F("bank: "));
+        Serial.println(memBank);
+        setValuePicker(memBank, 0, BANK_MAX - 1, false);
+    }
+
+    funcButtons.update();
+    if (funcButtons.onPress(FUNCTIONS::ENTER))
+        uiState = nextState;
+}
+
+void selectPattern(Knob *k, UIState nextState)
+{
+    k->update();
+
+    if (uiStateChanged())
+    {
+        Serial.println(F("select pattern"));
+        k->setValue(memPattern);
+        setLedState(19, ledFLASH);
+        setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
+    }
+
+    if (k->didChange())
+    {
+        memPattern = constrain(memPattern + k->direction(), 0, PATTERN_MAX - 1);
+        Serial.print(F("pattern: "));
+        Serial.println(memPattern);
+        setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
+    }
+
+    funcButtons.update();
+    if (funcButtons.onPress(FUNCTIONS::ENTER))
+        uiState = nextState;
+}
+
+void finishedStorageAction()
+{
+    setValuePicker(9, 0, 9, true, 500);
+    setLedState(ledENTER, LedState::ledOFF);
+    uiState = UIState::SEQUENCER;
+    Serial.println(F("load/save complete"));
+}
+
+void updatePatternStorage()
+{
+    switch (uiState)
+    {
+    case UIState::SA_BANK_SELECT:
+        selectBank(knob[2], UIState::SA_PATTERN_SELECT);
+
+    case UIState::SA_PATTERN_SELECT:
+        selectPattern(knob[2], UIState::SA_ACTION_COMPLETE);        
+
+    case UIState::SA_ACTION_COMPLETE:
+        if (storageAction == StorageAction::LOAD_PATTERN)
+            loadPattern(memBank, memPattern);
+        else
+            savePattern(memBank, memPattern);
+        finishedStorageAction();
+    default:
+        break;
+    }
+}
+/*
 void updateLoading()
 {
-    funcButtons.update();
-
-    Knob *k = knob[2];
-    k->update();
-    int8_t d = k->direction();
-
     switch (uiState)
     {
     case UIState::LOADING_BANK_SELECT:
-        if (stateChanged())
-        {          
-            Serial.println(F("select bank"));  
-            k->setValue(memBank);            
-            setLedState(ledENTER, LedState::ledFLASH);
-            for (byte i = 16; i < 25; i++)
-                setLedState(i, (i < 22) ? ledOFF : ledFLASH);
-            setLedState(16, ledON);
-            setValuePicker(memBank, 0, 3, false);            
-        }
-
-        if (k->didChange())
-        {
-            memBank = constrain(memBank + d, 0, BANK_MAX - 1);
-            Serial.print(F("bank: "));
-            Serial.println(memBank);
-            setValuePicker(memBank, 0, BANK_MAX - 1, false);
-        }
-        break;
+        selectBank(knob[2], UIState::LOADING_PATTERN_SELECT);
 
     case UIState::LOADING_PATTERN_SELECT:
-        if (stateChanged()) {
-            k->setValue(memPattern);
-            setLedState(19, ledON);
-            setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
-        }            
+        selectPattern(knob[2], UIState::LOADING_COMPLETE);
 
-        if (k->didChange())
-        {
-            memPattern = constrain(memPattern + d, 0, PATTERN_MAX - 1);
-            Serial.print(F("pattern: "));
-            Serial.println(memPattern);
-            setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
-        }
-        break;
-
-    case UIState::LOADING_COMPLETE: 
+    case UIState::LOADING_COMPLETE:        
         loadPattern(memBank, memPattern);
-        setValuePicker(9, 0, 9, true, 500); 
-        setLedState(ledENTER, LedState::ledOFF);                   
-        uiState = UIState::SEQUENCER;
+        finishedStorageAction();
+    default:
         break;
-
-    default: break;
-    }
-
-    
-    // ENTER PRESSED
-    if (funcButtons.onPress(FUNCTIONS::ENTER))
-    {        
-        switch (uiState) {
-        
-        case UIState::LOADING_BANK_SELECT:
-            uiState = UIState::LOADING_PATTERN_SELECT;
-            Serial.println(F("select pattern"));
-            break;
-
-        case UIState::LOADING_PATTERN_SELECT:   
-            uiState = UIState::LOADING_COMPLETE;
-            Serial.println(F("loading complete"));
-            break;
-
-/*
-        case UIState::LOADING_COMPLETE:
-            hideDialog();
-            setLedState(ledENTER, ledOFF);
-  */          
-        default: break;
-            
-        }
     }
 }
 
 void updateSaving()
 {
-    funcButtons.update();
-    encoderButtons.update();
+    switch (uiState)
+    {
+    case UIState::SAVING_BANK_SELECT:
+        selectBank(knob[2], UIState::SAVING_PATTERN_SELECT);
+
+    case UIState::SAVING_PATTERN_SELECT:
+        selectPattern(knob[2], UIState::SAVING_COMPLETE);
+
+    case UIState::SAVING_COMPLETE:
+        savePattern(memBank, memPattern);
+        finishedLoadSave();
+
+    default:
+        break;
+    }
 }
+*/
 
 void refreshKnobLeds()
 {
@@ -268,7 +294,7 @@ void refreshKnobLeds()
 
 void updateControls()
 {
-    if (stateChanged())
+    if (uiStateChanged())
         refreshKnobLeds();
 
     encoderButtons.update();
@@ -292,14 +318,19 @@ void handleFunctionButtons()
     // FUNCTION BUTTONS
     if (funcButtons.onPress(SHIFT))
     {
+#if (DEBUG)
         Serial.println(F("shift-pressed"));
+#endif
+
         LedState newState = (getLedState(ledSHIFT) == ledON) ? ledOFF : ledON;
         setLedState(ledSHIFT, newState);
     }
 
     if (funcButtons.onPress(PLAY))
     {
+#if (DEBUG)
         Serial.print(F("play-pressed"));
+#endif
 
         if (getLedState(ledSHIFT) == ledON)
         {
@@ -334,16 +365,15 @@ void handleFunctionButtons()
     if (funcButtons.onPress(SAVE))
     {
         Serial.println(F("SAVE pressed"));
-        //uiState = UIState::SAVING_BANK_SELECT;
-        //setLedState(ledENTER, LedState::ledFLASH);
-        //setValuePicker(1, 1, 4, 0);
-        //savePattern(0, 0);
+        storageAction = StorageAction::SAVE_PATTERN;
+        uiState = UIState::SA_BANK_SELECT;        
     }
 
     if (funcButtons.onPress(LOAD))
     {
         Serial.println(F("LOAD pressed"));
-        uiState = UIState::LOADING_BANK_SELECT;
+        storageAction = StorageAction::LOAD_PATTERN;
+        uiState = UIState::SA_BANK_SELECT;
     }
 }
 

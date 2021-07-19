@@ -41,4 +41,10 @@ void loadPattern(uint8_t fromSlot, uint8_t inBank) {
     pattern[i] = EEPROM.read(slotLocation + i);
 }
 
+enum StorageAction
+{
+    LOAD_PATTERN,
+    SAVE_PATTERN
+};
+
 #endif
