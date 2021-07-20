@@ -14,7 +14,9 @@
 #include "display.h"
 #include "knob.h"
 #include "patternLoad.h"
-#include "logger.h"
+
+//#include "logger.h"
+
 
 #if (SHOWMEM)
 #include "MemoryFree.h"
@@ -55,8 +57,9 @@ void interruptCallback() { seq->externalClockTrigger(); }
 #pragma region SETUP
 
 void setup()
-{
+{    
     Serial.begin(115200);
+    testPattern();
 #if (LOGGING)
     Serial.println(F("loading..."));
 #endif
@@ -230,7 +233,7 @@ void updatePatternStorage()
         selectBank(knob[2], UIState::SA_PATTERN_SELECT);
 
     case UIState::SA_PATTERN_SELECT:
-        selectPattern(knob[2], UIState::SA_ACTION_COMPLETE);        
+        selectPattern(knob[2], UIState::SA_ACTION_COMPLETE);
 
     case UIState::SA_ACTION_COMPLETE:
         if (storageAction == StorageAction::LOAD_PATTERN)
@@ -238,50 +241,13 @@ void updatePatternStorage()
         else
             savePattern(memBank, memPattern);
         finishedStorageAction();
-    default:
-        break;
-    }
-}
-/*
-void updateLoading()
-{
-    switch (uiState)
-    {
-    case UIState::LOADING_BANK_SELECT:
-        selectBank(knob[2], UIState::LOADING_PATTERN_SELECT);
-
-    case UIState::LOADING_PATTERN_SELECT:
-        selectPattern(knob[2], UIState::LOADING_COMPLETE);
-
-    case UIState::LOADING_COMPLETE:        
-        loadPattern(memBank, memPattern);
-        finishedStorageAction();
-    default:
-        break;
-    }
-}
-
-void updateSaving()
-{
-    switch (uiState)
-    {
-    case UIState::SAVING_BANK_SELECT:
-        selectBank(knob[2], UIState::SAVING_PATTERN_SELECT);
-
-    case UIState::SAVING_PATTERN_SELECT:
-        selectPattern(knob[2], UIState::SAVING_COMPLETE);
-
-    case UIState::SAVING_COMPLETE:
-        savePattern(memBank, memPattern);
-        finishedLoadSave();
 
     default:
         break;
     }
 }
-*/
 
-void refreshKnobLeds()
+void showKnobSelectorLeds()
 {
     knob[0]->setLED();
     knob[1]->setLED();
@@ -295,7 +261,7 @@ void refreshKnobLeds()
 void updateControls()
 {
     if (uiStateChanged())
-        refreshKnobLeds();
+        showKnobSelectorLeds();
 
     encoderButtons.update();
     handleEncoderButtons();
@@ -318,7 +284,7 @@ void handleFunctionButtons()
     // FUNCTION BUTTONS
     if (funcButtons.onPress(SHIFT))
     {
-#if (DEBUG)
+#if (LOGGING)
         Serial.println(F("shift-pressed"));
 #endif
 
@@ -328,7 +294,7 @@ void handleFunctionButtons()
 
     if (funcButtons.onPress(PLAY))
     {
-#if (DEBUG)
+#if (LOGGING)
         Serial.print(F("play-pressed"));
 #endif
 
@@ -366,7 +332,7 @@ void handleFunctionButtons()
     {
         Serial.println(F("SAVE pressed"));
         storageAction = StorageAction::SAVE_PATTERN;
-        uiState = UIState::SA_BANK_SELECT;        
+        uiState = UIState::SA_BANK_SELECT;
     }
 
     if (funcButtons.onPress(LOAD))
