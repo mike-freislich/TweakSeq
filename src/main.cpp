@@ -231,6 +231,7 @@ void updatePatternStorage()
     {
     case UIState::SA_BANK_SELECT:
         selectBank(knob[2], UIState::SA_PATTERN_SELECT);
+        break;
 
     case UIState::SA_PATTERN_SELECT:
         selectPattern(knob[2], UIState::SA_ACTION_COMPLETE);
