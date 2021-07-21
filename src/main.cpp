@@ -1,6 +1,6 @@
 #define LOGGING false
 #define GRAPHING false
-#define SHOWMEM false
+#define SHOWMEM true
 
 #include <Arduino.h>
 #include <avr/io.h>
@@ -16,11 +16,6 @@
 #include "patternLoad.h"
 
 //#include "logger.h"
-
-
-#if (SHOWMEM)
-#include "MemoryFree.h"
-#endif
 
 #pragma region FUNCTION HEADERS
 void setupSequencer();
@@ -75,16 +70,7 @@ void setup()
 
 void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
 
-void showFreeMemory(uint8_t i = 99)
-{
-#if (SHOWMEM)
 
-    Serial.print(F("freemem["));
-    Serial.print(i);
-    Serial.print(F("]="));
-    Serial.println(freeMemory());
-#endif
-}
 
 void setupSequencer()
 {
