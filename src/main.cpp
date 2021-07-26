@@ -1,6 +1,6 @@
 #define LOGGING false
 #define GRAPHING false
-#define SHOWMEM true
+#define SHOWMEM false
 
 #include <Arduino.h>
 #include <avr/io.h>
@@ -13,9 +13,12 @@
 #include "glide.h"
 #include "display.h"
 #include "knob.h"
-//#include "patternLoad.h"
 
-//#include "logger.h"
+#define OUTPUT_ENABLE_PIN 3 // Shift Register - pin 13
+#define DATA_PIN 4         // Shift Register - pin 14
+#define LATCH_PIN 5        // Shift Register - pin 12
+#define CLOCK_PIN 6        // Shift Register - pin 11
+#include "ShiftRegisterPWM.h"
 
 #pragma region FUNCTION HEADERS
 void setupSequencer();
@@ -33,6 +36,7 @@ void updateLoading();
 void updateSaving();
 void updateKnobs();
 void updatePatternStorage();
+
 
 #pragma endregion
 
@@ -53,7 +57,9 @@ void interruptCallback() { seq->externalClockTrigger(); }
 
 void setup()
 {    
-    Serial.begin(57600);
+    #if (LOGGING) || (SHOWMEM) || GRAPHING
+    Serial.begin(115200);
+    #endif
     testPattern();
 #if (LOGGING)
     Serial.println(F("loading..."));
@@ -156,7 +162,9 @@ void selectBank(Knob *k, UIState nextState)
 
     if (uiStateChanged())
     {
+        #if (LOGGING)
         Serial.println(F("select bank"));
+        #endif
         k->setValue(memBank);
         setLedState(ledENTER, LedState::ledFLASH);
         for (byte i = 16; i < 25; i++)
@@ -168,8 +176,10 @@ void selectBank(Knob *k, UIState nextState)
     if (k->didChange())
     {
         memBank = constrain(memBank + k->direction(), 0, BANK_MAX - 1);
+           #if (LOGGING)
         Serial.print(F("bank: "));
         Serial.println(memBank);
+           #endif
         setValuePicker(memBank, 0, BANK_MAX - 1, false);
     }
 
@@ -184,7 +194,9 @@ void selectPattern(Knob *k, UIState nextState)
 
     if (uiStateChanged())
     {
+           #if (LOGGING)
         Serial.println(F("select pattern"));
+        #endif
         k->setValue(memPattern);
         setLedState(19, ledFLASH);
         setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
@@ -193,8 +205,10 @@ void selectPattern(Knob *k, UIState nextState)
     if (k->didChange())
     {
         memPattern = constrain(memPattern + k->direction(), 0, PATTERN_MAX - 1);
+           #if (LOGGING)
         Serial.print(F("pattern: "));
         Serial.println(memPattern);
+        #endif
         setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
     }
 
@@ -208,7 +222,9 @@ void finishedStorageAction()
     setValuePicker(9, 0, 9, true, 500);
     setLedState(ledENTER, LedState::ledOFF);
     uiState = UIState::SEQUENCER;
+       #if (LOGGING)
     Serial.println(F("load/save complete"));
+    #endif
 }
 
 void updatePatternStorage()
@@ -308,7 +324,9 @@ void handleFunctionButtons()
 
     if (funcButtons.onPress(ENTER))
     {
+           #if (LOGGING)
         Serial.println(F("Enter pressed"));
+        #endif
         if (seq->isStepEditing())
             seq->patternInsertRest();
         else
@@ -317,14 +335,18 @@ void handleFunctionButtons()
 
     if (funcButtons.onPress(SAVE))
     {
+           #if (LOGGING)
         Serial.println(F("SAVE pressed"));
+        #endif
         storageAction = StorageAction::SAVE_PATTERN;
         uiState = UIState::SA_BANK_SELECT;
     }
 
     if (funcButtons.onPress(LOAD))
     {
+           #if (LOGGING)
         Serial.println(F("LOAD pressed"));
+        #endif
         storageAction = StorageAction::LOAD_PATTERN;
         uiState = UIState::SA_BANK_SELECT;
     }

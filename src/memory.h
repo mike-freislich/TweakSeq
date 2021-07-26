@@ -58,6 +58,7 @@ void testPattern()
   Pattern a;
   memcpy(&a, &p, sizeof(Pattern));  
 
+     #if (LOGGING)
   for (byte x = 0; x < sizeof(Pattern); x++)
   {
     Serial.print( ((uint8_t *)&p)[x]);
@@ -66,6 +67,7 @@ void testPattern()
     Serial.println();    
   }
   Serial.println();
+  #endif
 }
 
 void savePattern(uint8_t toSlot, uint8_t inBank)

@@ -372,9 +372,11 @@ public:
   // send MIDI message
   void MIDImessage(int command, int MIDI_note, int MIDIvelocity)
   {
+    #if (LOGGING)
     Serial.write(command);      //send note on or note off command
     Serial.write(MIDI_note);    //send pitch data
     Serial.write(MIDIvelocity); //send velocity data
+    #endif
   }
 
   void playNote()

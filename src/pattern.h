@@ -30,8 +30,10 @@ Pattern newPatternFromBytes(uint8_t *bytes)
 {
   Pattern p;
   uint8_t *data = (uint8_t *)&p;
+     #if (LOGGING)
   Serial.print("pattern size: ");
   Serial.println(sizeof(Pattern));
+  #endif
   for (byte i = 0; i < sizeof(Pattern); i ++)
   {
     //Serial.println(bytes[i]);
