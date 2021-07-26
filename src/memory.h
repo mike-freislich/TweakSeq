@@ -48,13 +48,12 @@ void testPattern()
     p.note[x] = pattern[x];
   p.tieData = 0;
   p.restData = 0;
-  //p.setRest(0);
-  //p.setRest(1);
-  //p.setTie(0);
-  //p.setTie(1);
-  //p.setTie(2);  
+  p.setRest(0);
+  p.setRest(1);
+  p.setTie(0);
+  p.setTie(1);
+  p.setTie(2);  
 
-  // TODO: fix problem with loading struct from bytes
   Pattern a;
   memcpy(&a, &p, sizeof(Pattern));  
 

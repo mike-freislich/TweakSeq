@@ -1,6 +1,6 @@
-#define LOGGING false
+#define LOGGING true
 #define GRAPHING false
-#define SHOWMEM false
+#define SHOWMEM true
 
 #include <Arduino.h>
 #include <avr/io.h>
@@ -44,6 +44,7 @@ void updatePatternStorage();
 
 MP4822 dac;
 Sequencer *seq;
+ShiftRegisterPWM *sr;
 StorageAction storageAction = StorageAction::LOAD_PATTERN;
 
 void bpmClockCallback() { seq->bpmClockTick(); }
@@ -69,6 +70,10 @@ void setup()
     setupDisplay();
     setupIO();
     setupKnobs();
+    //sr = new ShiftRegisterPWM();    
+    //sr->interrupt(ShiftRegisterPWM::UpdateFrequency::Medium);
+    //sr->set(1, 1);
+
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
     bpmClock.start(looping, 60.0 / 120 * 1000, bpmClockCallback);
     showFreeMemory(7);
