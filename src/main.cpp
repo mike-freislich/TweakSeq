@@ -13,7 +13,7 @@
 #include "glide.h"
 #include "display.h"
 #include "knob.h"
-#include "patternLoad.h"
+//#include "patternLoad.h"
 
 //#include "logger.h"
 

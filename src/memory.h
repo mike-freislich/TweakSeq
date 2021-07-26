@@ -58,7 +58,7 @@ void testPattern()
   p.setTie(1);
   p.setTie(2);
 
-  Pattern a = newPatternFromBytes(p.bytes()); // TODO: fix problem with loading struct from bytes
+  Pattern a = newPatternFromBytes(p.bytes()); // BUG: fix problem with loading struct from bytes
 
   for (byte b = 0; b < sizeof(p); b++)
   {
