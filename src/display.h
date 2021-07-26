@@ -221,11 +221,15 @@ LedState nextLedState(uint8_t ledIndex)
 void flashTimerTick()
 {
   flashState = !flashState;
+  //uiData ^= flashData;
+  didDisplayUpdate = true;
+  
+  
   for (uint8_t i = 0; i < 32; i++)
   {
     if (bitRead(flashData, i))
       ioSet(i, flashState);
-  }
+  }  
 }
 
 void setupDisplay()

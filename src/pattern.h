@@ -16,15 +16,27 @@ struct Pattern
   bool getRest(uint8_t position) { return bitRead(restData, position); }
   void setRest(uint8_t position) { bitSet(restData, position); }
   uint8_t *bytes() { return (uint8_t *)this; }
-} __attribute__((__packed__));
+};
 
 
-Pattern newPatternFromBytes(uint8_t *b)
+
+
+uint8_t *patternToBytes(Pattern *pattern)
+{
+  return (uint8_t *)pattern;
+}
+
+Pattern newPatternFromBytes(uint8_t *bytes)
 {
   Pattern p;
   uint8_t *data = (uint8_t *)&p;
-  for (byte i = 0; i < sizeof(p); i ++)  
-    data[i] = b[i];  
+  Serial.print("pattern size: ");
+  Serial.println(sizeof(Pattern));
+  for (byte i = 0; i < sizeof(Pattern); i ++)
+  {
+    //Serial.println(bytes[i]);
+    data[i] = bytes[i];
+  }
   
   return p;
 }
