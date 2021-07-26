@@ -21,7 +21,7 @@ const uint8_t KNOB2_B      = A3; // knob2_pin_B
 const uint8_t KNOB3_A      = 8; // knob3_pin_A
 const uint8_t KNOB3_B      = 9; // knob3_pin_B
 
-const uint8_t DAC_CS   = 10;   // Chip select pin for the DAC
+
 const uint8_t CLK_IN   = 2;    // External Clock input
 //const uint8_t MOSI   = 14;  // (MCP4822-P4)
 //const uint8_t MISO   = 15;  // (MCP4822-P5)

@@ -3,6 +3,8 @@
 
 #include <SPI.h>
 
+const uint8_t DAC_CS   = 10;   // Chip select pin for the DAC
+
 class MP4822
 {
 public:

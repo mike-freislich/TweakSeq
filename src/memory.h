@@ -44,28 +44,25 @@ void showFreeMemory(uint8_t i = 99)
 void testPattern()
 {
   Pattern p;
-  for (byte b = 0; b < 16; b++) {
-    p.note[b] = pattern[b];
-  }
-  uint16_t size = sizeof(p);
-  Serial.print(F("Pattern bytes: "));
-  Serial.println(size);
-  showFreeMemory(100);
+  for (uint8_t x = 0; x < 16; x++)
+    p.note[x] = pattern[x];
+  p.tieData = 0;
+  p.restData = 0;
+  //p.setRest(0);
+  //p.setRest(1);
+  //p.setTie(0);
+  //p.setTie(1);
+  //p.setTie(2);  
 
-  p.setRest(0);
-  p.setRest(1);
-  p.setTie(0);
-  p.setTie(1);
-  p.setTie(2);
+  // TODO: fix problem with loading struct from bytes
+  Pattern a;
+  memcpy(&a, &p, sizeof(Pattern));  
 
-  Pattern a = newPatternFromBytes(p.bytes()); // BUG: fix problem with loading struct from bytes
-
-  for (byte b = 0; b < sizeof(p); b++)
+  for (byte x = 0; x < sizeof(Pattern); x++)
   {
-    
-    Serial.print(a.bytes()[b]);
+    Serial.print( ((uint8_t *)&p)[x]);
     Serial.print("\t");
-    Serial.print(p.bytes()[b]);
+    Serial.print( ((uint8_t *)&a)[x]);
     Serial.println();    
   }
   Serial.println();

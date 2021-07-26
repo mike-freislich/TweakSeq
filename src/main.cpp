@@ -53,7 +53,7 @@ void interruptCallback() { seq->externalClockTrigger(); }
 
 void setup()
 {    
-    Serial.begin(115200);
+    Serial.begin(57600);
     testPattern();
 #if (LOGGING)
     Serial.println(F("loading..."));
