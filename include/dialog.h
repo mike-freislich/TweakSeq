@@ -1,6 +1,8 @@
 #ifndef MY_DIALOG
 #define MY_DIALOG
 
+#include "SimpleTimer.h"
+
 const uint16_t DIALOG_TIMEOUT = 1000;
 
 class Dialog
@@ -22,7 +24,7 @@ private:
     }
 
 protected:
-    ImTimer *dialogTimer;
+    SimpleTimer *dialogTimer;
     bool timed = false;
     uint16_t timeout;
     bool visible = false;
@@ -33,7 +35,7 @@ public:
     int16_t high;
     bool useCentreValue = false;
 
-    Dialog(ImTimer *dialogTimer, void (*callback)())
+    Dialog(SimpleTimer *dialogTimer, void (*callback)())
     {
         this->dialogTimer = dialogTimer;
         this->callback = callback;
@@ -56,7 +58,7 @@ public:
 
     void show() {
         if (this->timed)
-            this->dialogTimer->start(once, timeout, callback);       
+            this->dialogTimer->start(timeout);       
         else
             this->dialogTimer->stop(); 
 
@@ -74,8 +76,8 @@ public:
 
     void update()
     {
-        if (dialogTimer && this->timed)
-            dialogTimer->update();
+        if (dialogTimer && this->timed) 
+            if (dialogTimer->done()) this->callback();        
     }
 
     void setDisplayValue(int16_t value, int16_t low, int16_t high, bool timed, uint16_t timeout)

@@ -7,24 +7,33 @@ class SimpleTimer
 {
 private:
   uint32_t lastTime;
-  uint32_t timeout;
-
+  
 public:
+  uint32_t timeout;
+  bool running = false;
+  
+  SimpleTimer() {}
   SimpleTimer(uint32_t timeout) { start(timeout); }
   uint32_t elapsed() { return millis() - lastTime; }
-  void cycle() { start(timeout); }
+  
+  void cycle() { start(timeout);}
   
   void start(uint32_t timeout)
   {
     this->lastTime = millis();
     this->timeout = timeout;
+    running = true;
   }
+
+  void stop() { running = false; }
   
   bool done(bool restart = true)
   {    
+    if (!running) return false;
+
     bool val = (millis() - lastTime >= timeout);
     if (val & restart)
-      start(timeout);
+      start(timeout);    
     return val;
   }
 };

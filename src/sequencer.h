@@ -5,7 +5,9 @@
 #include "glide.h"
 #include "controls.h"
 #include "memory.h"
-#include "ImTimer.h"
+#include "ShiftRegisterPWM.h"
+#include "SimpleTimer.h"
+#include "dialog.h"
 
 #pragma region CONSTANTS / ENUMS
 
@@ -46,17 +48,13 @@ enum SequencerState
 #pragma endregion
 
 SequencerState currentMode = MODE_SEQUENCER;
-ImTimer bpmClock;
-ImTimer gateTimer;
-ImTimer clockLedTimer;
+Dialog *dialog;
 
 class Sequencer
 {
 private:
   int bpmMilliseconds;
-  ImTimer *_bpmClock = nullptr;
-  ImTimer *_gateTimer = nullptr;
-  ImTimer *_clockLedTimer = nullptr;
+
   short currentStep = -1;
   Note currentNote;
   Note previousNote;
@@ -75,46 +73,50 @@ private:
   uint8_t gateOpen = 0;
   uint8_t octave = 1;
 
+  ShiftRegisterPWM *sreg;
+
 public:
-  Sequencer(ImTimer *bpm, ImTimer *gate, ImTimer *clockLed)
+  SimpleTimer bpmClock = SimpleTimer();
+  SimpleTimer gateTimer = SimpleTimer();
+  SimpleTimer clockLedTimer = SimpleTimer();
+
+  Sequencer()
   {
-    _bpmClock = bpm;
-    _gateTimer = gate;
-    _clockLedTimer = clockLed;
     setClockMode(clockMode);
+    sreg = ShiftRegisterPWM::singleton;
   }
 
   void setRecording(bool recordingOn)
   {
     if (recordingOn)
     {
-      ShiftRegisterPWM::singleton->set(ledPLAY, ledFLASH);
-      ShiftRegisterPWM::singleton->set(ledSHIFT, ledOFF);
+      sreg->set(ledPLAY, ledFLASH);
+      sreg->set(ledSHIFT, ledOFF);
       currentStep = 0;
       isPaused = true;
-      //clearSequenceLights();
-      //setSequencerStep(currentStep); //TODO: setSequencerStep()
+
+      sreg->clearSequenceLights();
+      sreg->set(currentStep % 16, LedState::ledON);
     }
     else
     {
-      ShiftRegisterPWM::singleton->set(ledPLAY, ledOFF);      
+      ShiftRegisterPWM::singleton->set(ledPLAY, ledOFF);
       this->pause();
     }
-  }
-
-  short getCurrentStep() { return currentStep; }
+  }  
 
   int getTempo() { return bpmMilliseconds; }
 
   void setBpmMilliseconds(uint16_t bpm)
   {
     bpmMilliseconds = 60.0 / bpm * 1000;
-    bpmClock.changeDuration(bpmMilliseconds);
+    bpmClock.timeout = bpmMilliseconds;
   }
 
-  void setTempo(uint32_t milliseconds) {
+  void setTempo(uint32_t milliseconds)
+  {
     bpmMilliseconds = milliseconds;
-    bpmClock.changeDuration(milliseconds);
+    bpmClock.timeout = milliseconds;
   }
 
   int getBpm() { return bpm; }
@@ -134,11 +136,11 @@ public:
   /* ---------------- CLOCK HANDLING  ----------------
     */
   void bpmClockTick()
-  {    
+  {
     uint32_t elapsed = millis() - lastClockExt;
     if (elapsed > 2000)
       clockMode = ClockMode::CLK_INTERNAL;
-   
+
     internalClockTrigger();
   }
 
@@ -161,7 +163,8 @@ public:
       setTempo(elapsed);
     }
 
-    if (elapsed > 2000) {
+    if (elapsed > 2000)
+    {
       clockMode = ClockMode::CLK_INTERNAL;
     }
   }
@@ -175,48 +178,53 @@ public:
   {
     if (fromClock == clockMode)
     {
-      _clockLedTimer->start(once, 20);
-      ShiftRegisterPWM::singleton->set(ledClock, ledON);
-      ShiftRegisterPWM::singleton->set(outClock, ledON);                
+      clockLedTimer.start(20);
+      sreg->set(ledClock, ledON);
+      sreg->set(outClock, ledON);
       beat();
     }
   }
 
   void clockLedOff()
   {
-    ShiftRegisterPWM::singleton->set(ledClock,ledOFF);    
-    ShiftRegisterPWM::singleton->set(outClock, ledOFF);    
+    sreg->set(ledClock, ledOFF);
+    sreg->set(outClock, ledOFF);
   }
 
   void openGate()
   {
-    gateTimer.start(once, gateLength / 100.0 * getTempo());
-    gateOpen = 1;    
-    ShiftRegisterPWM::singleton->set(outGate, ledON);
-    ShiftRegisterPWM::singleton->set(ledGate, ledON);    
+    gateTimer.start(gateLength / 100.0 * getTempo());
+    gateOpen = 1;
+    sreg->set(outGate, ledON);
+    sreg->set(ledGate, ledON);
   }
 
   void closeGate()
   {
     gateOpen = 0;
-    ShiftRegisterPWM::singleton->set(outGate, ledOFF);
-    ShiftRegisterPWM::singleton->set(ledGate, ledOFF);    
+    sreg->set(outGate, ledOFF);
+    sreg->set(ledGate, ledOFF);
   }
 
   void pause()
   {
     isPaused = true;
     closeGate();
-    ShiftRegisterPWM::singleton->set(ledPLAY, ledOFF);    
+    ShiftRegisterPWM::singleton->set(ledPLAY, ledOFF);
   }
 
   void play()
   {
     isPaused = false;
-    ShiftRegisterPWM::singleton->set(ledPLAY, ledON);    
+    ShiftRegisterPWM::singleton->set(ledPLAY, ledON);
   }
 
-  bool isStepEditing() {return ShiftRegisterPWM::singleton->get(ledPLAY) == ledFLASH; }
+  bool isStepEditing() { return ShiftRegisterPWM::singleton->get(ledPLAY) == ledFLASH; }
+
+
+  void setStep(byte step) {
+    currentStep = step;
+  }
 
   short selectStep(short knobDirection)
   {
@@ -232,10 +240,13 @@ public:
     return currentStep;
   }
 
-  void stepForward()
+  void displayStep()
   {
-    currentStep = nextStep(currentStep);    
-    //setSequencerStep(currentStep); // TODO: setSequencerStep()
+    if (!dialog->isVisible())
+    {
+      sreg->clearSequenceLights();
+      sreg->set(currentStep % 8, LedState::ledON);
+    }
   }
 
   void beat()
@@ -244,7 +255,7 @@ public:
     {
       currentStep = nextStep(currentStep);
       playNote();
-      //setSequencerStep(currentStep); TODO: setSequencerStep()
+      displayStep();    
     }
   }
 
@@ -374,11 +385,11 @@ public:
   // send MIDI message
   void MIDImessage(int command, int MIDI_note, int MIDIvelocity)
   {
-    #if (LOGGING)
+#if (LOGGING)
     Serial.write(command);      //send note on or note off command
     Serial.write(MIDI_note);    //send pitch data
     Serial.write(MIDIvelocity); //send velocity data
-    #endif
+#endif
   }
 
   void playNote()
@@ -417,7 +428,8 @@ public:
     if (isStepEditing())
     {
       setPatternNote(currentNote);
-      stepForward();
+      currentStep = nextStep(currentStep);
+      displayStep();
     }
   }
 
@@ -428,7 +440,8 @@ public:
     note.octave = 0;
     note.pitch = 0;
     setPatternNote(note);
-    stepForward();
+    currentStep = nextStep(currentStep);
+    displayStep();
   }
 
   int16_t getPitchCV()
@@ -463,6 +476,20 @@ public:
               bpm, currentStep, note.octave, note.pitch, note.voltage, note.isRest, note.isTie);
       Serial.println(buffer);
       */
+  }
+
+  void update()
+  {
+    if (bpmClock.done())
+    {
+      bpmClock.cycle();
+      bpmClockTick();
+    }
+    
+    if (gateTimer.done()) { closeGate(); }
+    
+    if (clockLedTimer.done()) { clockLedOff(); }
+
   }
 };
 

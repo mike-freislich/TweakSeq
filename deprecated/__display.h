@@ -12,9 +12,8 @@
 uint32_t uiData = 0, flashData = 0;
 bool flashState = false;
 bool didDisplayUpdate = false;
-Dialog *dialog;
 
-ImTimer dialogTimer;
+SimpleTimer dialogTimer;
 ImTimer flashTimer;
 #pragma endregion
 
@@ -59,16 +58,6 @@ void ioSet(uint8_t channel, bool value)
     bitClear(uiData, channel);
 }
 
-void sendGateSignal(bool value)
-{
-  ioSet(outGate, value);
-}
-
-void sendClockSignal(bool value)
-{
-  ioSet(outClock, value);
-}
-
 void shiftOut(int myDataPin, int myClockPin, uint8_t myDataOut)
 {
   int i = 0;
@@ -106,14 +95,6 @@ void updateShiftRegister(unsigned long data)
   digitalWrite(latchPin, HIGH);
 
   didDisplayUpdate = false;
-}
-
-void clearSequenceLights()
-{
-  uiData &= (uint32_t)0xFFFF0000;  
-  flashData &= (uint32_t)0xFFFF0000;
-  didDisplayUpdate = true;
-  //Serial.println(F("clear sequence lights"));
 }
 
 void setSequencerStep(uint8_t step)

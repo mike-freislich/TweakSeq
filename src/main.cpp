@@ -11,15 +11,8 @@
 #include "memory.h"
 #include "ImTimer.h"
 #include "glide.h"
-
 #include "knob.h"
-
-#define OUTPUT_ENABLE_PIN 3 // Shift Register - pin 13
-#define DATA_PIN 4         // Shift Register - pin 14
-#define LATCH_PIN 5        // Shift Register - pin 12
-#define CLOCK_PIN 6        // Shift Register - pin 11
 #include "ShiftRegisterPWM.h"
-#include "display.h"
 
 #pragma region FUNCTION HEADERS
 void setupSequencer();
@@ -44,14 +37,12 @@ void updatePatternStorage();
 #pragma region GLOBAL VARS
 
 MP4822 dac;
-Sequencer *seq;
-ShiftRegisterPWM *sr;
+Sequencer seq = Sequencer();
+ShiftRegisterPWM sr = ShiftRegisterPWM(); 
 StorageAction storageAction = StorageAction::LOAD_PATTERN;
 
-void bpmClockCallback() { seq->bpmClockTick(); }
-void gateTimerCallback() { seq->closeGate(); }
-void clockLedTimerCallback() { seq->clockLedOff(); }
-void interruptCallback() { seq->externalClockTrigger(); }
+void interruptCallback() { seq.externalClockTrigger(); }
+void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
 
 #pragma endregion
 
@@ -66,31 +57,15 @@ void setup()
 #if (LOGGING)
     Serial.println(F("loading..."));
 #endif
-    showFreeMemory(1);
-    setupSequencer();
-    setupDisplay();
+    showFreeMemory(1);  
     setupIO();
     setupKnobs();
-    //sr = new ShiftRegisterPWM();    
-    //sr->interrupt(ShiftRegisterPWM::UpdateFrequency::Medium);
-    //sr->set(1, 1);
-
+       
+    sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Medium);    
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
-    bpmClock.start(looping, 60.0 / 120 * 1000, bpmClockCallback);
+    seq.setBpmMilliseconds(140);
+    //bpmClock.start(60.0 / 120 * 1000, bpmClockCallback); // TODO: setup bpmclock
     showFreeMemory(7);
-}
-
-void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
-
-
-
-void setupSequencer()
-{
-    bpmClock.setTickHandler(bpmClockCallback);
-    gateTimer.setTickHandler(gateTimerCallback);
-    clockLedTimer.setTickHandler(clockLedTimerCallback);
-    seq = new Sequencer(&bpmClock, &gateTimer, &clockLedTimer);
-    seq->setBpmMilliseconds(140);
 }
 
 void setupKnobs()
@@ -140,10 +115,10 @@ void setupKnobs()
 
 void loop()
 {
-    bpmClock.update();
-    gateTimer.update();
-    clockLedTimer.update();
-    cvOut(0, seq->getPitchCV());
+    seq.update();
+    
+    
+    cvOut(0, seq.getPitchCV());
 
     switch (uiState)
     {
@@ -155,7 +130,7 @@ void loop()
         updatePatternStorage();
     }
 
-    updateDisplay();
+    //updateDisplay();
 }
 
 #pragma endregion
@@ -172,11 +147,11 @@ void selectBank(Knob *k, UIState nextState)
         Serial.println(F("select bank"));
         #endif
         k->setValue(memBank);
-        setLedState(ledENTER, LedState::ledFLASH);
+        sr.set(ledENTER, LedState::ledFLASH);     
         for (byte i = 16; i < 25; i++)
-            setLedState(i, (i < 22) ? ledOFF : ledFLASH);
-        setLedState(16, ledFLASH);
-        setValuePicker(memBank, 0, 3, false);
+            sr.set(i, (i < 22) ? ledOFF : ledFLASH);
+        sr.set(16, ledFLASH);
+        //setValuePicker(memBank, 0, 3, false); // TODO : valuePicker
     }
 
     if (k->didChange())
@@ -186,7 +161,7 @@ void selectBank(Knob *k, UIState nextState)
         Serial.print(F("bank: "));
         Serial.println(memBank);
            #endif
-        setValuePicker(memBank, 0, BANK_MAX - 1, false);
+        //setValuePicker(memBank, 0, BANK_MAX - 1, false); // TODO: ValuePicker
     }
 
     funcButtons.update();
@@ -204,8 +179,8 @@ void selectPattern(Knob *k, UIState nextState)
         Serial.println(F("select pattern"));
         #endif
         k->setValue(memPattern);
-        setLedState(19, ledFLASH);
-        setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
+        sr.set(19, ledFLASH);
+        //setValuePicker(memPattern, 0, PATTERN_MAX - 1, false); // TODO: ValuePicker
     }
 
     if (k->didChange())
@@ -215,7 +190,7 @@ void selectPattern(Knob *k, UIState nextState)
         Serial.print(F("pattern: "));
         Serial.println(memPattern);
         #endif
-        setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
+        //setValuePicker(memPattern, 0, PATTERN_MAX - 1, false); // TODO: ValuePicker
     }
 
     funcButtons.update();
@@ -225,8 +200,8 @@ void selectPattern(Knob *k, UIState nextState)
 
 void finishedStorageAction()
 {
-    setValuePicker(9, 0, 9, true, 500);
-    setLedState(ledENTER, LedState::ledOFF);
+    //setValuePicker(9, 0, 9, true, 500); // TODO: ValuePicker
+    sr.set(ledENTER, LedState::ledOFF);
     uiState = UIState::SEQUENCER;
        #if (LOGGING)
     Serial.println(F("load/save complete"));
@@ -297,8 +272,8 @@ void handleFunctionButtons()
         Serial.println(F("shift-pressed"));
 #endif
 
-        LedState newState = (getLedState(ledSHIFT) == ledON) ? ledOFF : ledON;
-        setLedState(ledSHIFT, newState);
+        LedState newState = (sr.get(ledSHIFT) == ledON) ? ledOFF : ledON;
+        sr.set(ledSHIFT, newState);
     }
 
     if (funcButtons.onPress(PLAY))
@@ -307,10 +282,10 @@ void handleFunctionButtons()
         Serial.print(F("play-pressed"));
 #endif
 
-        if (getLedState(ledSHIFT) == ledON)
+        if (sr.get(ledSHIFT) == ledON)
         {
-            bool recordState = (getLedState(ledPLAY) != ledFLASH); // Toggle recording
-            seq->setRecording(recordState);
+            bool recordState = (sr.get(ledPLAY) != ledFLASH); // Toggle recording
+            seq.setRecording(recordState);
             if (recordState)
             {
                 knob[0]->setMode(KnobFunction::StepSelect);
@@ -320,11 +295,11 @@ void handleFunctionButtons()
         }
         else
         {
-            setLedState(ledPLAY, getLedState(ledPLAY)); // Toggle Play
-            if (ioState(ledPLAY) == ledON)
-                seq->pause();
+            sr.set(ledPLAY, sr.get(ledPLAY)); // Toggle Play
+            if (sr.get(ledPLAY) == ledON)
+                seq.pause();
             else
-                seq->play();
+                seq.play();
         }
     }
 
@@ -333,8 +308,8 @@ void handleFunctionButtons()
            #if (LOGGING)
         Serial.println(F("Enter pressed"));
         #endif
-        if (seq->isStepEditing())
-            seq->patternInsertRest();
+        if (seq.isStepEditing())
+            seq.patternInsertRest();
         else
             showFreeMemory(99);
     }
@@ -378,17 +353,19 @@ void handlePianoKeys()
     for (uint8_t i = 0; i < KBDW_BUTTONS_TOTAL; i++)
         if (pianoWhite.onPress(i))
         {
-            seq->pianoKeyPressed(pitchIndexWhite[i]);
+            seq.pianoKeyPressed(pitchIndexWhite[i]);
             break;
         }
 
     for (uint8_t i = 0; i < KBDB_BUTTONS_TOTAL; i++)
         if (pianoBlack.onPress(i))
         {
-            seq->pianoKeyPressed(pitchIndexBlack[i]);
+            seq.pianoKeyPressed(pitchIndexBlack[i]);
             break;
         }
 }
+
+#pragma endregion
 
 #pragma region ROTARY ENCODERS
 
@@ -420,28 +397,32 @@ void handleLeftRotaryEncoder()
                 newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);
                 //newTempo = max(newTempo, precisionPoint);
             }
-            seq->setBpmMilliseconds(newTempo);
+            seq.setBpmMilliseconds(newTempo);
             //Serial.println(F("tempo"));
-            setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
+
+            //setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax()); // TODO: ValuePicker
             break;
         }
         case 1:
         {
-            switch (getLedState(ledSHIFT))
+            switch (sr.get(ledSHIFT))
             {
             case ledOFF: // STEP SELECT
                 //Serial.println(F("step select"));
                 if (knobDirection != 0)
                 {
-                    short newStep = seq->selectStep(knobDirection);
-                    setSequencerStep(newStep);
+                    short newStep = seq.selectStep(knobDirection);
+                    
+                    seq.setStep(newStep);
+                    seq.displayStep();                    
                 }
                 break;
 
             case ledON: // SHIFT-Brightness
                 //Serial.println(F("brightness"));
-                setBrightness(value * 5);
-                setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
+                
+                sr.setPulseWidth(value * 5);
+                //setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax()); // TODO: ValuePicker
                 break;
 
             case ledFLASH: // not assigned
@@ -453,8 +434,8 @@ void handleLeftRotaryEncoder()
         case 2: // Gate Length
         {
             //Serial.println(F("g-length"));
-            seq->setGateLength(4 * value);
-            setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
+            seq.setGateLength(4 * value);
+            //setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax()); // TODO: ValuePicker
             break;
         }
         }
@@ -475,19 +456,19 @@ void handleMiddleRotaryEncoder()
         case 0: // playMode
             //Serial.println(F("play mode"));
             playMode = static_cast<PlayModes>(k->value());
-            setValuePicker(value, k->getRangeMin(), k->getRangeMax());
+            //setValuePicker(value, k->getRangeMin(), k->getRangeMax()); // TODO: ValuePicker
             break;
 
         case 1: // glide time
             //Serial.println(F("g-time"));
-            seq->setGlideTime(value / (float)knob[1]->getRangeMax());
-            setValuePicker(value, k->getRangeMin(), k->getRangeMax());
+            seq.setGlideTime(value / (float)knob[1]->getRangeMax());
+           // setValuePicker(value, k->getRangeMin(), k->getRangeMax());  // TODO: ValuePicker
             break;
 
         case 2: // pitch
             //Serial.println(F("pitch"));
-            seq->setTranspose(k->direction());
-            setValuePicker(seq->getTranspose(), k->getRangeMin(), k->getRangeMax());
+            seq.setTranspose(k->direction());
+           // setValuePicker(seq.getTranspose(), k->getRangeMin(), k->getRangeMax());  // TODO: ValuePicker
             break;
         }
         showFreeMemory();
@@ -506,20 +487,20 @@ void handleRightRotaryEncoder()
 
         case 0: // pattern length
             //Serial.println(F("p-length"));
-            seq->setPatternLength(value);
-            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
+            seq.setPatternLength(value);
+            //setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax()); // TODO: ValuePicker
             break;
 
         case 1: // glide shape
             //Serial.println(F("g-shape"));
-            seq->setCurveShape(value);
-            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
+            seq.setCurveShape(value);
+           // setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax()); // TODO: ValuePicker
             break;
 
         case 2: // octave
             //Serial.println(F("octave"));
-            seq->setOctave(value);
-            setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
+            seq.setOctave(value);
+           // setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax()); // TODO: ValuePicker
             break;
         }
         showFreeMemory();
@@ -528,4 +509,5 @@ void handleRightRotaryEncoder()
 
 #pragma endregion
 
-#pragma endregion
+
+
