@@ -231,11 +231,24 @@ public:
         return bitRead(ioFlashData, pin) == 1 ? 2 : bitRead(ioData, pin);
     }
 
+    
+    uint32_t getData() { return ioData; }
     void setData(uint32_t data)
     {
         ioData = data;
-        ioFlashData = 0x00000000;
     }
+
+    uint32_t getFlashData() { return ioFlashData; }
+    void setFlashData(uint32_t data)
+    {
+        ioFlashData = data;
+    }
+
+    void clearSequenceLights() {
+        ioData      &= (uint32_t)0xFFFF0000;  
+        ioFlashData   &= (uint32_t)0xFFFF0000;
+    }
+
 
     /** 
     * Updates the shift register outputs. This function should be called as frequently as possible, usually within an ISR to guarantee a fixed update frequency.

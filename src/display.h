@@ -121,7 +121,7 @@ void setSequencerStep(uint8_t step)
   if (!dialog->isVisible())
   {
     clearSequenceLights();
-    setLedState(step % 16, ledON);
+    ShiftRegisterPWM::singleton->set(step %16, LedState::ledON);    
   }
 }
 

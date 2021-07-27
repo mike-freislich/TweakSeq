@@ -92,6 +92,7 @@ public:
       ShiftRegisterPWM::singleton->set(ledSHIFT, ledOFF);
       currentStep = 0;
       isPaused = true;
+      //clearSequenceLights();
       //setSequencerStep(currentStep); //TODO: setSequencerStep()
     }
     else
