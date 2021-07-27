@@ -5,6 +5,7 @@
 #include "glide.h"
 #include "controls.h"
 #include "memory.h"
+#include "ImTimer.h"
 
 #pragma region CONSTANTS / ENUMS
 
@@ -87,15 +88,15 @@ public:
   {
     if (recordingOn)
     {
-      setLedState(ledPLAY, ledFLASH); // record mode ON
-      setLedState(ledSHIFT, ledOFF);
+      ShiftRegisterPWM::singleton->set(ledPLAY, ledFLASH);
+      ShiftRegisterPWM::singleton->set(ledSHIFT, ledOFF);
       currentStep = 0;
       isPaused = true;
-      setSequencerStep(currentStep);
+      //setSequencerStep(currentStep); //TODO: setSequencerStep()
     }
     else
     {
-      setLedState(ledPLAY, ledOFF); // record mode OFF
+      ShiftRegisterPWM::singleton->set(ledPLAY, ledOFF);      
       this->pause();
     }
   }
@@ -174,47 +175,47 @@ public:
     if (fromClock == clockMode)
     {
       _clockLedTimer->start(once, 20);
-      setLedState(ledClock, ledON);
-      sendClockSignal(true);
+      ShiftRegisterPWM::singleton->set(ledClock, ledON);
+      ShiftRegisterPWM::singleton->set(outClock, ledON);                
       beat();
     }
   }
 
   void clockLedOff()
   {
-    setLedState(ledClock, ledOFF);
-    sendClockSignal(false);
+    ShiftRegisterPWM::singleton->set(ledClock,ledOFF);    
+    ShiftRegisterPWM::singleton->set(outClock, ledOFF);    
   }
 
   void openGate()
   {
     gateTimer.start(once, gateLength / 100.0 * getTempo());
     gateOpen = 1;    
-    setLedState(outGate, ledON);
-    setLedState(ledGate, ledON);
+    ShiftRegisterPWM::singleton->set(outGate, ledON);
+    ShiftRegisterPWM::singleton->set(ledGate, ledON);    
   }
 
   void closeGate()
   {
     gateOpen = 0;
-    setLedState(outGate, ledOFF);
-    setLedState(ledGate, ledOFF);
+    ShiftRegisterPWM::singleton->set(outGate, ledOFF);
+    ShiftRegisterPWM::singleton->set(ledGate, ledOFF);    
   }
 
   void pause()
   {
     isPaused = true;
     closeGate();
-    setLedState(ledPLAY, ledOFF);
+    ShiftRegisterPWM::singleton->set(ledPLAY, ledOFF);    
   }
 
   void play()
   {
     isPaused = false;
-    setLedState(ledPLAY, ledON);
+    ShiftRegisterPWM::singleton->set(ledPLAY, ledON);    
   }
 
-  bool isStepEditing() { return getLedState(ledPLAY) == ledFLASH; }
+  bool isStepEditing() {return ShiftRegisterPWM::singleton->get(ledPLAY) == ledFLASH; }
 
   short selectStep(short knobDirection)
   {
@@ -232,8 +233,8 @@ public:
 
   void stepForward()
   {
-    currentStep = nextStep(currentStep);
-    setSequencerStep(currentStep);
+    currentStep = nextStep(currentStep);    
+    //setSequencerStep(currentStep); // TODO: setSequencerStep()
   }
 
   void beat()
@@ -242,7 +243,7 @@ public:
     {
       currentStep = nextStep(currentStep);
       playNote();
-      setSequencerStep(currentStep);
+      //setSequencerStep(currentStep); TODO: setSequencerStep()
     }
   }
 

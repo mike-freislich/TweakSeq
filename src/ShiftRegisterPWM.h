@@ -6,6 +6,11 @@
 #include <avr/interrupt.h>
 #include "SimpleTimer.h"
 
+#define DATA_PIN 4 // Shift Register - pin 14
+#define LATCH_PIN 5
+#define CLOCK_PIN 6
+#define OUTPUT_ENABLE_PIN 3
+
 #define ShiftRegisterPWM_DATA_PORT PORTD
 #define ShiftRegisterPWM_DATA_MASK 0b00010000
 #define ShiftRegisterPWM_LATCH_PORT PORTD

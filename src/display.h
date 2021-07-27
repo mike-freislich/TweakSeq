@@ -1,46 +1,17 @@
-#ifndef MYLEDS
-#define MYLEDS
+#ifndef MY_DISPLAY_H
+#define MY_DISPLAY_H
 
 #include <Arduino.h>
 #include "ImTimer.h"
 #include "dialog.h"
 #include "uistate.h"
 
-#pragma region CONSTANTS / ENUMS
-const uint8_t outputEnablePin = 3; // Shift Register - pin 13
-const uint8_t dataPin = 4;         // Shift Register - pin 14
-const uint8_t latchPin = 5;        // Shift Register - pin 12
-const uint8_t clockPin = 6;        // Shift Register - pin 11
 
-const uint8_t ledKnob[] PROGMEM = {16, 17, 18, 19, 20, 21, 22, 23, 24};
-const uint8_t ledSHIFT = 25;
-const uint8_t ledPLAY = 31;
-const uint8_t ledENTER = 28;
-const uint8_t ledClock = 26;
-const uint8_t ledGate = 27;
-const uint8_t outClock = 29;
-const uint8_t outGate = 30;
-
-enum LedState : uint8_t
-{
-  ledOFF = 0,
-  ledON = 1,
-  ledFLASH = 2
-};
-
-enum DisplayMode
-{
-  DM_SEQUENCE,
-  DM_VALUE
-};
-
-#pragma endregion
 
 #pragma region GLOBALS
 uint32_t uiData = 0, flashData = 0;
 bool flashState = false;
 bool didDisplayUpdate = false;
-//DisplayMode displayMode = DM_SEQUENCE;
 Dialog *dialog;
 
 ImTimer dialogTimer;

@@ -1,6 +1,8 @@
 #ifndef MY_TIMER_H
 #define MY_TIMER_H
+#include <Arduino.h>
 #include <util/atomic.h>
+
 
 void setMillis(unsigned long ms)
 {

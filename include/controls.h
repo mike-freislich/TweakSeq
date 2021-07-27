@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <AnalogMultiButton.h>
 #include <RotaryEncoder.h>
-#include "display.h"
 #include "knob.h"
 
 

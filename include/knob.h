@@ -1,10 +1,11 @@
 #ifndef MY_KNOB_H
-#define MY_KNOB_H
+#define MY_KNOB_H 
 
 #include <Arduino.h>
 #include <AnalogMultiButton.h>
 #include <RotaryEncoder.h>
-#include "display.h"
+#include "uistate.h"
+#include "ShiftRegisterPWM.h"
 
 enum KnobFunction : uint8_t
 {
@@ -40,8 +41,8 @@ private:
   KnobState knobState[2][3];  
   
   uint8_t modeShift()
-  {
-    uint8_t value = getLedState(ledSHIFT);
+  {    
+    uint8_t value = ShiftRegisterPWM::singleton->get(ledSHIFT);
     value = (value > 1) ? 1 : value;    
     if (value != lastShiftState) {
       lastShiftState = value;       
@@ -109,9 +110,10 @@ public:
   {
     for (uint8_t i = 0; i < 3; i++)
     {
-      setLedState(knobModes[i], ledOFF);
+      ShiftRegisterPWM::singleton->set(knobModes[i], ledOFF);      
     }
-    setLedState(knobModes[modeIndex], ledON);
+    ShiftRegisterPWM::singleton->set(knobModes[modeIndex], ledON);
+    
   }
 
   uint8_t getMode()

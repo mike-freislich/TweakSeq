@@ -11,7 +11,7 @@
 #include "memory.h"
 #include "ImTimer.h"
 #include "glide.h"
-#include "display.h"
+
 #include "knob.h"
 
 #define OUTPUT_ENABLE_PIN 3 // Shift Register - pin 13
@@ -19,6 +19,7 @@
 #define LATCH_PIN 5        // Shift Register - pin 12
 #define CLOCK_PIN 6        // Shift Register - pin 11
 #include "ShiftRegisterPWM.h"
+#include "display.h"
 
 #pragma region FUNCTION HEADERS
 void setupSequencer();
