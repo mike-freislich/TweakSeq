@@ -61,9 +61,8 @@ private:
 
   ShiftRegisterPWM *sreg;
 
-  uint16_t  getBpmInMilliseconds() { return 60.0 / bpm * 1000; }
-  void      setBpmInMilliseconds(uint32_t milliseconds) { bpmClock.timeout = milliseconds; }
-  
+  uint16_t getBpmInMilliseconds() { return 60.0 / bpm * 1000; }
+  void setBpmInMilliseconds(uint32_t milliseconds) { bpmClock.timeout = milliseconds; }
 
 public:
   SimpleTimer bpmClock = SimpleTimer();
@@ -74,7 +73,9 @@ public:
   Sequencer()
   {
     clockMode = CLK_INTERNAL;
-    sreg = ShiftRegisterPWM::singleton;       
+    sreg = ShiftRegisterPWM::singleton;
+    setBpm(120);
+    bpmClock.start((uint32_t)getBpmInMilliseconds());
   }
 
   void setRecording(bool startRecording)
@@ -218,7 +219,7 @@ public:
 
   void setValuePicker(int16_t value, int16_t low, int16_t high, bool timed = true, uint16_t ms = DIALOG_TIMEOUT)
   {
-    dialog.setDisplayValue(value, low, high, timed, ms);    
+    dialog.setDisplayValue(value, low, high, timed, ms);
     dialog.writeoutDisplayBuffer(&ioData, &ioFlashData);
     dialog.show();
   }
@@ -284,7 +285,7 @@ public:
   int16_t getPitchCV() { return constrain(glide.getPitch() + transpose * 40, 0, 3850); }
 
   uint16_t pitchToVoltage(uint16_t oct, uint16_t note)
-  {    
+  {
     uint8_t vInc = 40;
     uint16_t voltage = constrain(vInc * (12 * (oct - 1) + 1) + (note - 1) * vInc, 0, 3840);
     return voltage;
@@ -424,15 +425,13 @@ public:
   void update()
   {
     if (bpmClock.done())
-    {
-      bpmClock.cycle();
       bpmClockTick();
-    }
 
-    if (gateTimer.done())
+    if (gateTimer.done(false))
       closeGate();
-    if (clockLedTimer.done())
-      clockLedOff();    
+
+    if (clockLedTimer.done(false))
+      clockLedOff();
 
     dialog.update();
   }

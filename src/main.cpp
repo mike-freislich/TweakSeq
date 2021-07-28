@@ -1,6 +1,5 @@
 #define LOGGING true
-#define GRAPHING false
-#define SHOWMEM false
+#define SHOWMEM true
 
 #include <Arduino.h>
 #include <avr/io.h>
@@ -9,7 +8,7 @@
 #include "controls.h"
 #include "dac.h"
 #if (SHOWMEM)
-    #include "memory.h"
+#include "memory.h"
 #endif
 #include "glide.h"
 #include "ShiftRegisterPWM.h"
@@ -32,14 +31,13 @@ void updateSaving();
 void updateKnobs();
 void updatePatternStorage();
 
-
 #pragma endregion
 
 #pragma region GLOBAL VARS
 
 MP4822 dac;
-Sequencer seq = Sequencer();
-ShiftRegisterPWM sr = ShiftRegisterPWM(); 
+Sequencer seq;
+ShiftRegisterPWM sr;
 StorageAction storageAction = StorageAction::LOAD_PATTERN;
 
 void interruptCallback() { seq.externalClockTrigger(); }
@@ -50,21 +48,21 @@ void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
 #pragma region SETUP
 
 void setup()
-{    
-    #if (LOGGING) || (SHOWMEM) || GRAPHING
-    Serial.begin(115200);
-    #endif
+{
+#if (LOGGING) || (SHOWMEM) || GRAPHING
+    Serial.begin(57600);
+#endif
     testPattern();
 #if (LOGGING)
     Serial.println(F("loading..."));
 #endif
-    showFreeMemory(1);  
+    showFreeMemory(1);
     setupIO();
     setupKnobs();
-       
-    sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Medium);    
+
+    sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Medium);
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
-    seq.setBpm(140);    
+    seq.setBpm(140);
     showFreeMemory(7);
 }
 
@@ -116,21 +114,18 @@ void setupKnobs()
 void loop()
 {
     seq.update();
-    
-    
+
     cvOut(0, seq.getPitchCV());
 
     switch (uiState)
     {
     case UIState::SEQUENCER:
         updateControls();
-    case UIState::SA_BANK_SELECT:
-    case UIState::SA_PATTERN_SELECT:
-    case UIState::SA_ACTION_COMPLETE:
+    case UIState::ACTION_BANK_SELECT:
+    case UIState::ACTION_PATTERN_SELECT:
+    case UIState::ACTION_COMPLETE:
         updatePatternStorage();
     }
-
-    //updateDisplay();
 }
 
 #pragma endregion
@@ -143,11 +138,11 @@ void selectBank(Knob *k, UIState nextState)
 
     if (uiStateChanged())
     {
-        #if (LOGGING)
+#if (LOGGING)
         Serial.println(F("select bank"));
-        #endif
+#endif
         k->setValue(memBank);
-        sr.set(ledENTER, LedState::ledFLASH);     
+        sr.set(ledENTER, LedState::ledFLASH);
         for (byte i = 16; i < 25; i++)
             sr.set(i, (i < 22) ? ledOFF : ledFLASH);
         sr.set(16, ledFLASH);
@@ -157,10 +152,10 @@ void selectBank(Knob *k, UIState nextState)
     if (k->didChange())
     {
         memBank = constrain(memBank + k->direction(), 0, BANK_MAX - 1);
-           #if (LOGGING)
+#if (LOGGING)
         Serial.print(F("bank: "));
         Serial.println(memBank);
-           #endif
+#endif
         seq.setValuePicker(memBank, 0, BANK_MAX - 1, false);
     }
 
@@ -175,22 +170,22 @@ void selectPattern(Knob *k, UIState nextState)
 
     if (uiStateChanged())
     {
-           #if (LOGGING)
+#if (LOGGING)
         Serial.println(F("select pattern"));
-        #endif
+#endif
         k->setValue(memPattern);
         sr.set(19, ledFLASH);
-        seq.setValuePicker(memPattern, 0, PATTERN_MAX - 1, false); 
+        seq.setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
     }
 
     if (k->didChange())
     {
         memPattern = constrain(memPattern + k->direction(), 0, PATTERN_MAX - 1);
-           #if (LOGGING)
+#if (LOGGING)
         Serial.print(F("pattern: "));
         Serial.println(memPattern);
-        #endif
-        seq.setValuePicker(memPattern, 0, PATTERN_MAX - 1, false); 
+#endif
+        seq.setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
     }
 
     funcButtons.update();
@@ -200,26 +195,26 @@ void selectPattern(Knob *k, UIState nextState)
 
 void finishedStorageAction()
 {
-    seq.setValuePicker(9, 0, 9, true, 500); 
+    seq.setValuePicker(9, 0, 9, true, 500);
     sr.set(ledENTER, LedState::ledOFF);
     uiState = UIState::SEQUENCER;
-       #if (LOGGING)
+#if (LOGGING)
     Serial.println(F("load/save complete"));
-    #endif
+#endif
 }
 
 void updatePatternStorage()
 {
     switch (uiState)
     {
-    case UIState::SA_BANK_SELECT:
-        selectBank(knob[2], UIState::SA_PATTERN_SELECT);
+    case UIState::ACTION_BANK_SELECT:
+        selectBank(knob[2], UIState::ACTION_PATTERN_SELECT);
         break;
 
-    case UIState::SA_PATTERN_SELECT:
-        selectPattern(knob[2], UIState::SA_ACTION_COMPLETE);
+    case UIState::ACTION_PATTERN_SELECT:
+        selectPattern(knob[2], UIState::ACTION_COMPLETE);
 
-    case UIState::SA_ACTION_COMPLETE:
+    case UIState::ACTION_COMPLETE:
         if (storageAction == StorageAction::LOAD_PATTERN)
             loadPattern(memBank, memPattern);
         else
@@ -282,7 +277,7 @@ void handleFunctionButtons()
         Serial.print(F("play-pressed"));
 #endif
 
-        if (sr.get(ledSHIFT) == ledON)
+        if (sr.get(ledSHIFT) == LedState::ledON)
         {
             bool recordState = (sr.get(ledPLAY) != ledFLASH); // Toggle recording
             seq.setRecording(recordState);
@@ -294,8 +289,8 @@ void handleFunctionButtons()
             }
         }
         else
-        {
-            sr.set(ledPLAY, sr.get(ledPLAY)); // Toggle Play
+        {            
+            sr.toggle(ledPLAY);
             if (sr.get(ledPLAY) == ledON)
                 seq.pause();
             else
@@ -305,9 +300,9 @@ void handleFunctionButtons()
 
     if (funcButtons.onPress(ENTER))
     {
-           #if (LOGGING)
+#if (LOGGING)
         Serial.println(F("Enter pressed"));
-        #endif
+#endif
         if (seq.isStepEditing())
             seq.patternInsertRest();
         else
@@ -316,20 +311,20 @@ void handleFunctionButtons()
 
     if (funcButtons.onPress(SAVE))
     {
-           #if (LOGGING)
+#if (LOGGING)
         Serial.println(F("SAVE pressed"));
-        #endif
+#endif
         storageAction = StorageAction::SAVE_PATTERN;
-        uiState = UIState::SA_BANK_SELECT;
+        uiState = UIState::ACTION_BANK_SELECT;
     }
 
     if (funcButtons.onPress(LOAD))
     {
-           #if (LOGGING)
+#if (LOGGING)
         Serial.println(F("LOAD pressed"));
-        #endif
+#endif
         storageAction = StorageAction::LOAD_PATTERN;
-        uiState = UIState::SA_BANK_SELECT;
+        uiState = UIState::ACTION_BANK_SELECT;
     }
 }
 
@@ -391,37 +386,37 @@ void handleLeftRotaryEncoder()
                 int16_t nonLinearSteps = k->getRangeMax() - precisionPoint;
                 float factor = (value - precisionPoint) / (double)nonLinearSteps;
                 newTempo = value * factor * TEMPODIV;
-                newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);                
+                newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);
             }
             seq.setBpm(newTempo);
-            seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax()); 
+            seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
             break;
         }
         case 1:
             switch (sr.get(ledSHIFT))
             {
-            case ledOFF: // STEP SELECT                
+            case ledOFF: // STEP SELECT
                 if (knobDirection != 0)
                 {
-                    short newStep = seq.selectStep(knobDirection);                    
+                    short newStep = seq.selectStep(knobDirection);
                     seq.setStep(newStep);
-                    seq.displayStep();                    
+                    seq.displayStep();
                 }
                 break;
 
-            case ledON: // SHIFT-Brightness                            
+            case ledON: // SHIFT-Brightness
                 sr.setPulseWidth(value * 5);
-                seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax()); 
+                seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
                 break;
 
             case ledFLASH: // not assigned
                 break;
             }
-            break;        
+            break;
 
-        case 2: // Gate Length        
+        case 2: // Gate Length
             seq.setGateLength(4 * value);
-            seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax()); 
+            seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
             break;
         }
         showFreeMemory();
@@ -438,17 +433,17 @@ void handleMiddleRotaryEncoder()
         {
         case 0: // playMode
             playMode = static_cast<PlayModes>(k->value());
-            seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax()); 
+            seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
 
         case 1: // glide time
             seq.setGlideTime(value / (float)knob[1]->getRangeMax());
-            seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax()); 
+            seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
 
         case 2: // pitch
             seq.setTranspose(k->direction());
-            seq.setValuePicker(seq.getTranspose(), k->getRangeMin(), k->getRangeMax()); 
+            seq.setValuePicker(seq.getTranspose(), k->getRangeMin(), k->getRangeMax());
             break;
         }
         showFreeMemory();
@@ -464,19 +459,19 @@ void handleRightRotaryEncoder()
         switch (knob[2]->getMode())
         {
 
-        case 0: // pattern length    
+        case 0: // pattern length
             seq.setPatternLength(value);
-            seq.setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax()); 
+            seq.setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
             break;
 
         case 1: // glide shape
-            seq.setCurveShape((Glide::CurveType) value);
+            seq.setCurveShape((Glide::CurveType)value);
             seq.setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
             break;
 
         case 2: // octave
             seq.setOctave(value);
-            seq.setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax()); 
+            seq.setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
             break;
         }
         showFreeMemory();
@@ -484,6 +479,3 @@ void handleRightRotaryEncoder()
 }
 
 #pragma endregion
-
-
-

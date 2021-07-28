@@ -1,6 +1,8 @@
 #ifndef MY_UISTATE
 #define MY_UISTATE
 
+#include <Arduino.h>
+
 #pragma region CONSTANTS / ENUMS
 const uint8_t outputEnablePin = 3; // Shift Register - pin 13
 const uint8_t dataPin = 4;         // Shift Register - pin 14
@@ -21,10 +23,11 @@ const uint8_t outGate = 30;
 enum UIState
 {
     SEQUENCER,
-    SA_BANK_SELECT,
-    SA_PATTERN_SELECT,
-    SA_ACTION_COMPLETE,
+    ACTION_BANK_SELECT,
+    ACTION_PATTERN_SELECT,
+    ACTION_COMPLETE,
 };
+
 UIState uiState = UIState::SEQUENCER;
 UIState uiLastState = uiState;
 

@@ -7,10 +7,10 @@
 
 
 // ANALOG
-const uint8_t BUTTONS_ENCODER    = A4; // resistor ladder beat buttons (3)
-const uint8_t BUTTONS_KBD_BLACK  = A5; // resistor ladder beat buttons (5)
-const uint8_t BUTTONS_KBD_WHITE  = A6; // resistor ladder beat buttons (7)
-const uint8_t BUTTONS_FUNC       = A7; // resistor ladder function buttons (5)
+const uint8_t BUTTONS_ENCODER    = A4; 
+const uint8_t BUTTONS_KBD_BLACK  = A5; 
+const uint8_t BUTTONS_KBD_WHITE  = A6; 
+const uint8_t BUTTONS_FUNC       = A7; 
 
 // DIGITAL
 const uint8_t KNOB1_A      = A0; // knob1_pin_A
@@ -20,11 +20,7 @@ const uint8_t KNOB2_B      = A3; // knob2_pin_B
 const uint8_t KNOB3_A      = 8; // knob3_pin_A
 const uint8_t KNOB3_B      = 9; // knob3_pin_B
 
-
-const uint8_t CLK_IN   = 2;    // External Clock input
-//const uint8_t MOSI   = 14;  // (MCP4822-P4)
-//const uint8_t MISO   = 15;  // (MCP4822-P5)
-//const uint8_t SCK    = 16;  // (MCP4822-P3)
+const uint8_t CLK_IN   = 2;    // External Clock
 
 void setupIO() {
   pinMode(BUTTONS_ENCODER, INPUT);

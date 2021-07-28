@@ -14,6 +14,10 @@ public:
     SPI.begin();
   }
 
+  ~MP4822() {
+    SPI.end();
+  }  
+
   //function to set state of DAC - input value between 0-4095
   void DAC_set(uint8_t channel, int16_t inputVoltage, uint8_t gain = 0)
   {

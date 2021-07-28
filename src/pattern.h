@@ -18,9 +18,6 @@ struct Pattern
   uint8_t *bytes() { return (uint8_t *)this; }
 };
 
-
-
-
 uint8_t *patternToBytes(Pattern *pattern)
 {
   return (uint8_t *)pattern;
@@ -34,11 +31,9 @@ Pattern newPatternFromBytes(uint8_t *bytes)
   Serial.print("pattern size: ");
   Serial.println(sizeof(Pattern));
   #endif
+  
   for (byte i = 0; i < sizeof(Pattern); i ++)
-  {
-    //Serial.println(bytes[i]);
     data[i] = bytes[i];
-  }
   
   return p;
 }

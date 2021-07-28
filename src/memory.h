@@ -52,21 +52,21 @@ void testPattern()
   p.setRest(1);
   p.setTie(0);
   p.setTie(1);
-  p.setTie(2);  
+  p.setTie(2);
 
   Pattern a;
-  memcpy(&a, &p, sizeof(Pattern));  
+  memcpy(&a, &p, sizeof(Pattern));
 
-     #if (LOGGING)
+#if (LOGGING)
   for (byte x = 0; x < sizeof(Pattern); x++)
   {
-    Serial.print( ((uint8_t *)&p)[x]);
+    Serial.print(((uint8_t *)&p)[x]);
     Serial.print("\t");
-    Serial.print( ((uint8_t *)&a)[x]);
-    Serial.println();    
+    Serial.print(((uint8_t *)&a)[x]);
+    Serial.println();
   }
   Serial.println();
-  #endif
+#endif
 }
 
 void savePattern(uint8_t toSlot, uint8_t inBank)
