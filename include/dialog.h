@@ -10,7 +10,6 @@ class Dialog
 private:
     uint16_t displayData;
     uint16_t flashData;
-    void (*callback)();
 
     void addDisplayBorders()
     {
@@ -23,61 +22,44 @@ private:
         displayData = displayData | 0xC000; // set on led 15 + 16
     }
 
-protected:
-    SimpleTimer *dialogTimer;
-    bool timed = false;
-    uint16_t timeout;
-    bool visible = false;
-
-public:
-    int16_t value;
-    int16_t low;
-    int16_t high;
-    bool useCentreValue = false;
-
-    Dialog(SimpleTimer *dialogTimer, void (*callback)())
-    {
-        this->dialogTimer = dialogTimer;
-        this->callback = callback;
-    }
-
-    virtual ~Dialog() {}
-
-    bool isVisible() { return this->visible; }
-
-    void setTimeout(uint16_t timeout)
-    {                
-        this->timeout = timeout;        
-    }
-
     void clearDisplayBuffer()
     {
         displayData = 0;
         flashData = 0;
     }
 
-    void show() {
-        if (this->timed)
-            this->dialogTimer->start(timeout);       
-        else
-            this->dialogTimer->stop(); 
+protected:
+    SimpleTimer dialogTimer = SimpleTimer(DIALOG_TIMEOUT);
+    uint16_t timeout;
+    bool timed, visible;        
 
-        this->visible = true;                    
-    }
+public:
+    int16_t value;
+    int16_t low;
+    int16_t high;    
 
-    void hide()
+    Dialog() {}
+
+    virtual ~Dialog() {}
+
+    bool isVisible() { return this->visible; }
+
+    void show()
     {
-        Serial.println("hide");
-        visible = false;
-        if (dialogTimer)
-            dialogTimer->stop();
-        clearDisplayBuffer();                
+        if (timed)
+            dialogTimer.start(timeout);
+        else
+            dialogTimer.stop();
+
+        visible = true;
     }
+
+    void hide() { visible = false; }
 
     void update()
     {
-        if (dialogTimer && this->timed) 
-            if (dialogTimer->done()) this->callback();        
+        if (timed && dialogTimer.done())
+            visible = false;
     }
 
     void setDisplayValue(int16_t value, int16_t low, int16_t high, bool timed, uint16_t timeout)
@@ -88,12 +70,14 @@ public:
         this->high = high;
         this->timed = timed;
 
-        show();      
+        show();
         bufferDisplay();
     }
 
     virtual void bufferDisplay()
     {
+        clearDisplayBuffer();
+
         uint16_t percentValue;
         uint16_t steps = high - low + 1;
 
@@ -101,12 +85,10 @@ public:
             percentValue = (low == 0) ? value + 1 : value;
         else
         {
-            percentValue = ceil((double)(value - low) / (double)steps * 10);
-            percentValue = min(percentValue, 10);
-            percentValue = max(percentValue, 1);
+            percentValue = ceil((double)(value - low) / (double)steps * 10.0);
+            percentValue = max(min(percentValue, 10), 1);
         }
 
-        clearDisplayBuffer();
         if (steps != 16)
             addDisplayBorders();
 
@@ -124,7 +106,6 @@ public:
         *uiFlashData &= (uint32_t)0xFFFF0000;
         *uiData |= displayData;
         *uiFlashData |= flashData;
-        clearDisplayBuffer();
     }
 };
 

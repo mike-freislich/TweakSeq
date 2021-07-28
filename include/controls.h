@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <AnalogMultiButton.h>
 #include <RotaryEncoder.h>
-#include "knob.h"
+//#include "knob.h"
 
 
 // ANALOG
@@ -32,8 +32,6 @@ void setupIO() {
   pinMode(BUTTONS_KBD_BLACK, INPUT);
   pinMode(BUTTONS_KBD_WHITE, INPUT);
   pinMode(CLK_IN, INPUT_PULLUP);
-  
-  //setupDisplay();
 }
 
 const uint8_t pitchIndexWhite[7] = { 0, 2, 4, 5, 7, 9, 11 };

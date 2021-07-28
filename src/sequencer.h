@@ -1,5 +1,6 @@
 #ifndef MY_SEQUENCER
 #define MY_SEQUENCER
+
 #include <Arduino.h>
 #include "note.h"
 #include "glide.h"
@@ -8,17 +9,14 @@
 #include "ShiftRegisterPWM.h"
 #include "SimpleTimer.h"
 #include "dialog.h"
+#include "uistate.h"
 
 #pragma region CONSTANTS / ENUMS
 
 const uint16_t MAXTEMPO = 8000;
 const float TEMPODIV = 80.0;
 
-#if (GRAPHING)
-uint16_t serialCounter = 0;
-#endif
-
-enum PlayModes : byte
+enum PlayModes : uint8_t
 {
   FORWARD = 1,
   REVERSE,
@@ -36,24 +34,13 @@ enum ClockMode
   CLK_EXTERNAL
 };
 ClockMode clockMode = ClockMode::CLK_INTERNAL;
-bool extClockTriggered = false;
-
-enum SequencerState
-{
-  MODE_SEQUENCER,
-  MODE_BANKSELECT,
-  MODE_PATTERNSELECT
-};
 
 #pragma endregion
-
-SequencerState currentMode = MODE_SEQUENCER;
-Dialog *dialog;
 
 class Sequencer
 {
 private:
-
+  Dialog dialog = Dialog();
   short currentStep = -1;
   Note currentNote;
   Note previousNote;
@@ -74,17 +61,20 @@ private:
 
   ShiftRegisterPWM *sreg;
 
-  void setBPMinMilliseconds(uint32_t milliseconds) { bpmClock.timeout = milliseconds; }
+  uint16_t  getBpmInMilliseconds() { return 60.0 / bpm * 1000; }
+  void      setBpmInMilliseconds(uint32_t milliseconds) { bpmClock.timeout = milliseconds; }
+  
 
 public:
   SimpleTimer bpmClock = SimpleTimer();
   SimpleTimer gateTimer = SimpleTimer();
   SimpleTimer clockLedTimer = SimpleTimer();
+  SimpleTimer dialogTimer = SimpleTimer();
 
   Sequencer()
-  { 
+  {
     clockMode = CLK_INTERNAL;
-    sreg = ShiftRegisterPWM::singleton;
+    sreg = ShiftRegisterPWM::singleton;       
   }
 
   void setRecording(bool startRecording)
@@ -104,17 +94,15 @@ public:
       ShiftRegisterPWM::singleton->set(ledPLAY, ledOFF);
       this->pause();
     }
-  }  
-
-  uint16_t getBPMinMilliseconds() { return 60.0 / bpm * 1000; }
+  }
 
   /**
    * Converts beats/minute to milliseconds in order to update
    * the Sequencer's BPM Clock timer
    * @param bpm specifies the beats per minute to set
    */
-  void setBPM(uint16_t bpm) { bpmClock.timeout = 60.0 / bpm * 1000; }  
-  uint16_t getBPM() { return bpm; }
+  void setBpm(uint16_t bpm) { bpmClock.timeout = 60.0 / bpm * 1000; }
+  uint16_t getBpm() { return bpm; }
   void setGateLength(int value) { gateLength = value; }
   void setGlideTime(float value) { portamento = value; }
   void setPatternLength(int value) { patternLength = value; }
@@ -150,12 +138,11 @@ public:
     {
       lastClockExt = now;
       beatFrom(CLK_EXTERNAL);
-      setBPMinMilliseconds(elapsed);
+      setBpmInMilliseconds(elapsed);
     }
 
-    if (elapsed > 2000)    
+    if (elapsed > 2000)
       clockMode = ClockMode::CLK_INTERNAL;
-    
   }
 
   void internalClockTrigger()
@@ -182,7 +169,7 @@ public:
 
   void openGate()
   {
-    gateTimer.start(gateLength / 100.0 * getBPMinMilliseconds());
+    gateTimer.start(gateLength / 100.0 * getBpmInMilliseconds());
     gateOpen = 1;
     sreg->set(outGate, ledON);
     sreg->set(ledGate, ledON);
@@ -210,8 +197,8 @@ public:
 
   bool isStepEditing() { return ShiftRegisterPWM::singleton->get(ledPLAY) == ledFLASH; }
 
-
-  void setStep(byte step) {
+  void setStep(byte step)
+  {
     currentStep = step;
   }
 
@@ -229,9 +216,16 @@ public:
     return currentStep;
   }
 
+  void setValuePicker(int16_t value, int16_t low, int16_t high, bool timed = true, uint16_t ms = DIALOG_TIMEOUT)
+  {
+    dialog.setDisplayValue(value, low, high, timed, ms);    
+    dialog.writeoutDisplayBuffer(&ioData, &ioFlashData);
+    dialog.show();
+  }
+
   void displayStep()
   {
-    if (!dialog->isVisible())
+    if (!dialog.isVisible())
     {
       sreg->clearSequenceLights();
       sreg->set(currentStep % 8, LedState::ledON);
@@ -244,7 +238,7 @@ public:
     {
       currentStep = nextStep(currentStep);
       playNote();
-      displayStep();    
+      displayStep();
     }
   }
 
@@ -287,11 +281,11 @@ public:
     return retVal;
   }
 
+  int16_t getPitchCV() { return constrain(glide.getPitch() + transpose * 40, 0, 3850); }
+
   uint16_t pitchToVoltage(uint16_t oct, uint16_t note)
-  {
-    // oct = 1 to 8
-    // note = 1 to 12  C,C#,D,D#,E,F,F#,G,G#,A,A#,B
-    uint8_t vInc = 40; // 0.040V
+  {    
+    uint8_t vInc = 40;
     uint16_t voltage = constrain(vInc * (12 * (oct - 1) + 1) + (note - 1) * vInc, 0, 3840);
     return voltage;
   }
@@ -299,7 +293,6 @@ public:
   void changeCurve()
   {
     curveIndex = (curveIndex + 1) % 3;
-      
     glide.setCurve((Glide::CurveType)curveIndex);
   }
 
@@ -313,7 +306,7 @@ public:
     note.isTie = (stepData == TIE);
     note.octave = octave;
     note.pitch = keyPressed;
-    note.voltage = pitchToVoltage(note.octave, note.pitch); //midiTable[stepData];
+    note.voltage = pitchToVoltage(note.octave, note.pitch);
     return note;
   }
 
@@ -353,9 +346,7 @@ public:
 
   void setPatternNote(Note note)
   {
-
     uint8_t noteData;
-
     if (note.isRest)
     {
       noteData = REST;
@@ -368,8 +359,6 @@ public:
       noteData = note.pitch + (note.octave - 1) * 12;
 
     pattern[currentStep] = noteData;
-    Note newNote = getPatternNote(currentStep);
-    printData(newNote);
   }
 
   // send MIDI message
@@ -387,7 +376,7 @@ public:
     previousNote = currentNote;
     currentNote = getPatternNote(currentStep);
     if (playMode == CHAOS_CURVES)
-      setCurveShape((Glide::CurveType) random(4));
+      setCurveShape((Glide::CurveType)random(4));
     if (currentNote.isRest)
     {
       currentNote.pitch = previousNote.pitch;
@@ -398,10 +387,8 @@ public:
     else
     {
       openGate();
-      glide.begin(this->getBPMinMilliseconds(), portamento, previousNote.voltage, currentNote.voltage);
+      glide.begin(this->getBpmInMilliseconds(), portamento, previousNote.voltage, currentNote.voltage);
     }
-
-    printData(currentNote);
 
     /* MIDImessage(100, note.midiNote, 120);       // TODO: MIDI
       */
@@ -413,7 +400,7 @@ public:
     currentNote = getKeyboardNote(keyPressed);
 
     openGate();
-    glide.begin(this->getBPMinMilliseconds(), portamento, previousNote.voltage, currentNote.voltage);
+    glide.begin(this->getBpmInMilliseconds(), portamento, previousNote.voltage, currentNote.voltage);
 
     if (isStepEditing())
     {
@@ -434,40 +421,6 @@ public:
     displayStep();
   }
 
-  int16_t getPitchCV()
-  {
-#if (GRAPHING)
-    serialCounter++;
-    serialCounter %= 100;
-    if (serialCounter == 0)
-    {
-      int GRAPHSCALE = 8;
-
-      char buffer[100];
-      sprintf(buffer, "oct:%d voltage:%d\t gate:%d encBtn:%d funcBtn:%d black:%d white:%d",
-              octave * 1000,
-              (int)(voltage * 2.083),
-              gateOpen,
-              analogRead(BUTTONS_ENCODER) * GRAPHSCALE,
-              analogRead(BUTTONS_FUNC) * GRAPHSCALE,
-              analogRead(BUTTONS_KBD_BLACK) * GRAPHSCALE,
-              analogRead(BUTTONS_KBD_WHITE) * GRAPHSCALE);
-      Serial.println(buffer);
-    }
-#endif
-    return constrain(glide.getPitch() + transpose * 40, 0, 3850);
-  }
-
-  void printData(Note &note)
-  {
-    /*
-      char buffer[100];
-      sprintf(buffer, "[BPM: %04d ] - step: %02d, octave: %u, note: %u, voltage: %04u, \trest:%d, tie:%d",
-              bpm, currentStep, note.octave, note.pitch, note.voltage, note.isRest, note.isTie);
-      Serial.println(buffer);
-      */
-  }
-
   void update()
   {
     if (bpmClock.done())
@@ -475,11 +428,13 @@ public:
       bpmClock.cycle();
       bpmClockTick();
     }
-    
-    if (gateTimer.done()) { closeGate(); }
-    
-    if (clockLedTimer.done()) { clockLedOff(); }
 
+    if (gateTimer.done())
+      closeGate();
+    if (clockLedTimer.done())
+      clockLedOff();    
+
+    dialog.update();
   }
 };
 
