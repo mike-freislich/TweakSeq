@@ -10,26 +10,17 @@ const uint16_t curveDataBy[CURVE_RESOLUTION] PROGMEM = {5, 10, 15, 20, 25, 30, 3
 const uint16_t curveDataCx[CURVE_RESOLUTION] PROGMEM = {1, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000};
 const uint16_t curveDataCy[CURVE_RESOLUTION] PROGMEM = {3, 7, 10, 13, 17, 20, 23, 27, 30, 33, 37, 40, 43, 47, 50, 53, 57, 60, 63, 67, 70, 73, 77, 80, 83, 87, 90, 93, 97, 100};
 
-enum CurveType
-{
-  CURVE_A = 0,
-  CURVE_B,
-  CURVE_C,
-  CURVE_D
-};
-
 class Glide
 {
-private:
-  uint32_t startTime;  // when the note started playing
-  uint16_t noteTime;   // delay before starting glide
-  uint16_t portamento; // how long to glide/bend for
-  int16_t pitch1;      // initial pitch
-  int16_t pitch2;      // final to pitch
-  int16_t glideScale;  // pitch range
-  CurveType curveType = CurveType::CURVE_B;
 
 public:
+  enum CurveType
+  {
+    CURVE_A = 0,
+    CURVE_B,
+    CURVE_C,
+    CURVE_D
+  };
   Glide() { this->setCurve(CURVE_B); }
 
   void setCurve(CurveType curveType) { this->curveType = curveType; }
@@ -132,6 +123,15 @@ public:
     t = t * t * (3 - 2 * t);
     return getCurveY(i) * (1 - t) + getCurveY(i + 1) * t;
   }
+
+private:
+  uint32_t startTime;  // when the note started playing
+  uint16_t noteTime;   // delay before starting glide
+  uint16_t portamento; // how long to glide/bend for
+  int16_t pitch1;      // initial pitch
+  int16_t pitch2;      // final to pitch
+  int16_t glideScale;  // pitch range
+  CurveType curveType = CurveType::CURVE_B;
 };
 
 #endif

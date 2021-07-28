@@ -63,8 +63,7 @@ void setup()
        
     sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Medium);    
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
-    seq.setBpmMilliseconds(140);
-    //bpmClock.start(60.0 / 120 * 1000, bpmClockCallback); // TODO: setup bpmclock
+    seq.setBPM(140);    
     showFreeMemory(7);
 }
 
@@ -397,7 +396,7 @@ void handleLeftRotaryEncoder()
                 newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);
                 //newTempo = max(newTempo, precisionPoint);
             }
-            seq.setBpmMilliseconds(newTempo);
+            seq.setBPM(newTempo);
             //Serial.println(F("tempo"));
 
             //setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax()); // TODO: ValuePicker
@@ -493,7 +492,7 @@ void handleRightRotaryEncoder()
 
         case 1: // glide shape
             //Serial.println(F("g-shape"));
-            seq.setCurveShape(value);
+            seq.setCurveShape((Glide::CurveType) value);
            // setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax()); // TODO: ValuePicker
             break;
 

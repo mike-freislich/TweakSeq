@@ -53,7 +53,6 @@ Dialog *dialog;
 class Sequencer
 {
 private:
-  int bpmMilliseconds;
 
   short currentStep = -1;
   Note currentNote;
@@ -63,7 +62,7 @@ private:
   short transpose = 0;
 
   uint16_t bpm = 120;
-  uint8_t curveIndex = CURVE_B;
+  uint8_t curveIndex = Glide::CurveType::CURVE_B;
   float portamento = 0.2;
 
   uint8_t patternLength = 16;
@@ -75,20 +74,22 @@ private:
 
   ShiftRegisterPWM *sreg;
 
+  void setBPMinMilliseconds(uint32_t milliseconds) { bpmClock.timeout = milliseconds; }
+
 public:
   SimpleTimer bpmClock = SimpleTimer();
   SimpleTimer gateTimer = SimpleTimer();
   SimpleTimer clockLedTimer = SimpleTimer();
 
   Sequencer()
-  {
-    setClockMode(clockMode);
+  { 
+    clockMode = CLK_INTERNAL;
     sreg = ShiftRegisterPWM::singleton;
   }
 
-  void setRecording(bool recordingOn)
+  void setRecording(bool startRecording)
   {
-    if (recordingOn)
+    if (startRecording)
     {
       sreg->set(ledPLAY, ledFLASH);
       sreg->set(ledSHIFT, ledOFF);
@@ -105,29 +106,23 @@ public:
     }
   }  
 
-  int getTempo() { return bpmMilliseconds; }
+  uint16_t getBPMinMilliseconds() { return 60.0 / bpm * 1000; }
 
-  void setBpmMilliseconds(uint16_t bpm)
-  {
-    bpmMilliseconds = 60.0 / bpm * 1000;
-    bpmClock.timeout = bpmMilliseconds;
-  }
-
-  void setTempo(uint32_t milliseconds)
-  {
-    bpmMilliseconds = milliseconds;
-    bpmClock.timeout = milliseconds;
-  }
-
-  int getBpm() { return bpm; }
+  /**
+   * Converts beats/minute to milliseconds in order to update
+   * the Sequencer's BPM Clock timer
+   * @param bpm specifies the beats per minute to set
+   */
+  void setBPM(uint16_t bpm) { bpmClock.timeout = 60.0 / bpm * 1000; }  
+  uint16_t getBPM() { return bpm; }
   void setGateLength(int value) { gateLength = value; }
   void setGlideTime(float value) { portamento = value; }
   void setPatternLength(int value) { patternLength = value; }
-  void setCurveShape(int value) { glide.setCurve(static_cast<CurveType>(value)); }
-  void setOctave(int value) { octave = value; }
-  short getTranspose() { return transpose; }
+  void setCurveShape(Glide::CurveType value) { glide.setCurve(value); }
+  void setOctave(uint8_t value) { octave = value; }
+  int8_t getTranspose() { return transpose; }
 
-  void setTranspose(short direction)
+  void setTranspose(int8_t direction)
   {
     if (direction != 0)
       transpose = constrain(this->transpose + direction, -24, 24);
@@ -144,11 +139,6 @@ public:
     internalClockTrigger();
   }
 
-  void setClockMode(ClockMode mode)
-  {
-    clockMode = mode;
-  }
-
   void externalClockTrigger()
   {
     clockMode = ClockMode::CLK_EXTERNAL;
@@ -160,13 +150,12 @@ public:
     {
       lastClockExt = now;
       beatFrom(CLK_EXTERNAL);
-      setTempo(elapsed);
+      setBPMinMilliseconds(elapsed);
     }
 
-    if (elapsed > 2000)
-    {
+    if (elapsed > 2000)    
       clockMode = ClockMode::CLK_INTERNAL;
-    }
+    
   }
 
   void internalClockTrigger()
@@ -193,7 +182,7 @@ public:
 
   void openGate()
   {
-    gateTimer.start(gateLength / 100.0 * getTempo());
+    gateTimer.start(gateLength / 100.0 * getBPMinMilliseconds());
     gateOpen = 1;
     sreg->set(outGate, ledON);
     sreg->set(ledGate, ledON);
@@ -310,7 +299,8 @@ public:
   void changeCurve()
   {
     curveIndex = (curveIndex + 1) % 3;
-    glide.setCurve(static_cast<CurveType>(curveIndex));
+      
+    glide.setCurve((Glide::CurveType)curveIndex);
   }
 
   Note getKeyboardNote(uint8_t keyPressed)
@@ -397,7 +387,7 @@ public:
     previousNote = currentNote;
     currentNote = getPatternNote(currentStep);
     if (playMode == CHAOS_CURVES)
-      setCurveShape(random(4));
+      setCurveShape((Glide::CurveType) random(4));
     if (currentNote.isRest)
     {
       currentNote.pitch = previousNote.pitch;
@@ -408,7 +398,7 @@ public:
     else
     {
       openGate();
-      glide.begin(this->getTempo(), portamento, previousNote.voltage, currentNote.voltage);
+      glide.begin(this->getBPMinMilliseconds(), portamento, previousNote.voltage, currentNote.voltage);
     }
 
     printData(currentNote);
@@ -423,7 +413,7 @@ public:
     currentNote = getKeyboardNote(keyPressed);
 
     openGate();
-    glide.begin(this->getTempo(), portamento, previousNote.voltage, currentNote.voltage);
+    glide.begin(this->getBPMinMilliseconds(), portamento, previousNote.voltage, currentNote.voltage);
 
     if (isStepEditing())
     {
