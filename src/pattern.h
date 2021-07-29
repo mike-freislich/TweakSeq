@@ -16,6 +16,11 @@ struct Pattern
   bool getRest(uint8_t position) { return bitRead(restData, position); }
   void setRest(uint8_t position) { bitSet(restData, position); }
   uint8_t *bytes() { return (uint8_t *)this; }
+  static Pattern fromBytes(uint8_t *data) {
+    Pattern p = Pattern();
+    memcpy(&p, data, sizeof(Pattern));
+    return p;
+  }
 };
 
 uint8_t *patternToBytes(Pattern *pattern)

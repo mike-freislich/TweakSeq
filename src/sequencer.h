@@ -315,7 +315,7 @@ public:
   {
     Note note;
     note.stepNumber = atIndex;
-    uint8_t stepData = pattern[atIndex];
+    uint8_t stepData = pattern.note[atIndex];
 
     note.isRest = (stepData == REST);
     note.isTie = (stepData == TIE);
@@ -359,7 +359,7 @@ public:
     else
       noteData = note.pitch + (note.octave - 1) * 12;
 
-    pattern[currentStep] = noteData;
+    pattern.note[currentStep] = noteData;
   }
 
   // send MIDI message

@@ -1,5 +1,5 @@
 #define LOGGING true
-#define SHOWMEM false
+#define SHOWMEM true
 
 #include <Arduino.h>
 #include <avr/io.h>
