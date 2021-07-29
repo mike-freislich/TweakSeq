@@ -143,7 +143,7 @@ void selectBank(Knob *k, UIState nextState)
         sr.set(ledENTER, LedState::ledFLASH);
         for (byte i = 16; i < 25; i++)
             sr.set(i, (i < 22) ? ledOFF : ledFLASH);
-        sr.set(16, ledFLASH);
+        sr.set(16, ledFLASH); //TODO: not flashing?
         seq.setValuePicker(memBank, 0, 3, false);
     }
 
@@ -172,7 +172,7 @@ void selectPattern(Knob *k, UIState nextState)
         Serial.println(F("select pattern"));
 #endif
         k->setValue(memPattern);
-        sr.set(19, ledFLASH);
+        sr.set(19, ledFLASH); //TODO: not flashing?
         seq.setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
     }
 
