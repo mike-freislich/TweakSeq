@@ -1,5 +1,5 @@
 #define LOGGING true
-#define SHOWMEM true
+#define SHOWMEM false
 
 #include <Arduino.h>
 #include <avr/io.h>
@@ -71,7 +71,7 @@ void setupKnobs()
     knob[0] = new Knob(0, encoderButtons, KNOB1_A, KNOB1_B);
     knob[0]->setRange(ledOFF, 0, 20, MAXTEMPO / TEMPODIV);
     knob[0]->setRange(ledOFF, 1, 1, 50); // brightness
-    knob[0]->setRange(ledOFF, 2, 1, 25); // gate duration % of note
+    knob[0]->setRange(ledOFF, 2, 0, 24); // gate duration % of note
     knob[0]->setRange(ledON, 0, 1, MAXTEMPO / TEMPODIV);
     knob[0]->setRange(ledON, 1, 1, 50); // brightness
     knob[0]->setRange(ledON, 2, 1, 25); // gate duration % of note
@@ -119,12 +119,10 @@ void loop()
 
     switch (uiState)
     {
-    case UIState::SEQUENCER:
-        updateControls();
+    case UIState::SEQUENCER: updateControls();
     case UIState::ACTION_BANK_SELECT:
     case UIState::ACTION_PATTERN_SELECT:
-    case UIState::ACTION_COMPLETE:
-        updatePatternStorage();
+    case UIState::ACTION_COMPLETE: updatePatternStorage();
     }
 }
 
@@ -213,6 +211,7 @@ void updatePatternStorage()
 
     case UIState::ACTION_PATTERN_SELECT:
         selectPattern(knob[2], UIState::ACTION_COMPLETE);
+        break;
 
     case UIState::ACTION_COMPLETE:
         if (storageAction == StorageAction::LOAD_PATTERN)
@@ -391,7 +390,8 @@ void handleLeftRotaryEncoder()
                 newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);
             }
             seq.setBpm(newTempo);
-            seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
+            //seq.setGateLength();
+            seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
         }
         case 1:
@@ -408,7 +408,7 @@ void handleLeftRotaryEncoder()
 
             case ledON: // SHIFT-Brightness
                 sr.setPulseWidth(value * 5);
-                seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
+                seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
                 break;
 
             case ledFLASH: // not assigned
@@ -417,8 +417,8 @@ void handleLeftRotaryEncoder()
             break;
 
         case 2: // Gate Length
-            seq.setGateLength(4 * value);
-            seq.setValuePicker(value, knob[0]->getRangeMin(), knob[0]->getRangeMax());
+            seq.setGateLength(4 * value + 1);
+            seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
         }
         showFreeMemory();
@@ -439,7 +439,8 @@ void handleMiddleRotaryEncoder()
             break;
 
         case 1: // glide time
-            seq.setGlideTime(value / (float)knob[1]->getRangeMax());
+            Serial.println(value / (float)k->getRangeMax());
+            seq.setGlideTime(value / (float)k->getRangeMax());
             seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
 

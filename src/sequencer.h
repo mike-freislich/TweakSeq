@@ -102,9 +102,9 @@ public:
    * the Sequencer's BPM Clock timer
    * @param bpm specifies the beats per minute to set
    */
-  void setBpm(uint16_t bpm) { bpmClock.timeout = 60.0 / bpm * 1000; }
+  void setBpm(uint16_t bpm) { bpmClock.timeout = 60.0 / bpm * 1000; this->bpm = bpm;}
   uint16_t getBpm() { return bpm; }
-  void setGateLength(int value) { gateLength = value; }
+  void setGateLength(uint8_t value) { gateLength = value; }
   void setGlideTime(float value) { portamento = value; }
   void setPatternLength(int value) { patternLength = value; }
   void setCurveShape(Glide::CurveType value) { glide.setCurve(value); }
@@ -132,8 +132,8 @@ public:
   {
     clockMode = ClockMode::CLK_EXTERNAL;
 
-    unsigned long now = millis();
-    unsigned long elapsed = now - lastClockExt;
+    uint32_t now = millis();
+    uint32_t elapsed = now - lastClockExt;
 
     if (elapsed > 20)
     {

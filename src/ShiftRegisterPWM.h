@@ -250,7 +250,6 @@ public:
         ioFlashData   &= (uint32_t)0xFFFF0000;
     }
 
-
     /** 
     * Updates the shift register outputs. This function should be called as frequently as possible, usually within an ISR to guarantee a fixed update frequency.
     * For manual operation it is important to ensure that the function is called with a constant frequency that is suitable for the application. Commonly that is around 50 Hz * resolution for LEDs.

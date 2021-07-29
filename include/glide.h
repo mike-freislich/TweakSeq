@@ -34,7 +34,7 @@ public:
     }
   }
 
-  void begin(int gate, float portoPercent, int pitch1, int pitch2)
+  void begin(uint16_t gate, float portoPercent, int pitch1, int pitch2)
   {
     this->pitch1 = pitch1;
     this->pitch2 = pitch2;
