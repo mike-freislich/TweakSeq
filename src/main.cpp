@@ -418,6 +418,7 @@ void handleLeftRotaryEncoder()
             break;
 
         case 2: // Gate Length
+                    
             seq.setGateLength(4 * value + 1);
             seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;

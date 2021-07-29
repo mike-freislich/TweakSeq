@@ -57,7 +57,6 @@ private:
   short direction = 1;
 
   uint8_t gateLength = 10;
-  uint8_t gateOpen = 0;
   uint8_t octave = 1;
 
   ShiftRegisterPWM *sreg;
@@ -174,9 +173,9 @@ public:
   }
 
   void openGate()
-  {          
-    gateTimer.start(max(2, gateLength / 100.0 * getBpmInMilliseconds()));
-    gateOpen = 1;
+  {        
+    uint32_t time = constrain(gateLength / 100.0 * getBpmInMilliseconds(), 2, getBpmInMilliseconds()-2);  
+    gateTimer.start(time);
     sreg->set(outGate, ledON);
     sreg->set(ledGate, ledON);
   }
@@ -185,7 +184,6 @@ public:
   {
     if (!pattern.getTie(currentStep))
     {
-      gateOpen = 0;
       sreg->set(outGate, ledOFF);
       sreg->set(ledGate, ledOFF);
     }
