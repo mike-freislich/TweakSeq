@@ -109,7 +109,7 @@ public:
     this->bpm = bpm;
   }
   uint16_t getBpm() { return bpm; }
-  void setGateLength(uint8_t value) { gateLength = value; }
+  void setGateLength(uint8_t value) {gateLength = value; }
   void setGlideTime(float value) { portamento = value; }
   void setPatternLength(int value) { patternLength = value; }
   void setCurveShape(Glide::CurveType value) { glide.setCurve(value); }
@@ -160,7 +160,7 @@ public:
   {
     if (fromClock == clockMode)
     {
-      clockLedTimer.start(20);
+      clockLedTimer.start(2);
       sreg->set(ledClock, ledON);
       sreg->set(outClock, ledON);
       beat();
@@ -174,8 +174,8 @@ public:
   }
 
   void openGate()
-  {
-    gateTimer.start(gateLength / 100.0 * getBpmInMilliseconds());
+  {          
+    gateTimer.start(max(2, gateLength / 100.0 * getBpmInMilliseconds()));
     gateOpen = 1;
     sreg->set(outGate, ledON);
     sreg->set(ledGate, ledON);
