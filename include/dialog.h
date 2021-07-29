@@ -31,12 +31,12 @@ private:
 protected:
     SimpleTimer dialogTimer = SimpleTimer(DIALOG_TIMEOUT);
     uint16_t timeout;
-    bool timed, visible;        
+    bool timed, visible;
 
 public:
     int16_t value;
     int16_t low;
-    int16_t high;    
+    int16_t high;
 
     Dialog() {}
 
@@ -54,12 +54,17 @@ public:
         visible = true;
     }
 
-    void hide() { visible = false; }
+    void hide()
+    {
+        Serial.println(F("hiding"));
+        visible = false;
+        ShiftRegisterPWM::singleton->clearSequenceLights();
+    }
 
     void update()
     {
         if (timed && dialogTimer.done())
-            visible = false;
+            hide();
     }
 
     void setDisplayValue(int16_t value, int16_t low, int16_t high, bool timed, uint16_t timeout)
@@ -70,8 +75,8 @@ public:
         this->high = high;
         this->timed = timed;
 
-        show();
         bufferDisplay();
+        show();        
     }
 
     virtual void bufferDisplay()

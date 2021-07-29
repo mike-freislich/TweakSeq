@@ -229,7 +229,7 @@ public:
     if (!dialog.isVisible())
     {
       sreg->clearSequenceLights();
-      sreg->set(currentStep % 8, LedState::ledON);
+      sreg->set(currentStep % 16, LedState::ledON);
     }
   }
 

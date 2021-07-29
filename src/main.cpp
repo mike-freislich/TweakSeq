@@ -60,7 +60,7 @@ void setup()
     setupIO();
     setupKnobs();
 
-    sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Medium);
+    sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Slow);
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
     seq.setBpm(140);
     showFreeMemory(7);
@@ -289,9 +289,9 @@ void handleFunctionButtons()
             }
         }
         else
-        {            
+        {
             sr.toggle(ledPLAY);
-            if (sr.get(ledPLAY) == ledON)
+            if (sr.get(ledPLAY) == ledOFF)
                 seq.pause();
             else
                 seq.play();

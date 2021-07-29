@@ -343,9 +343,9 @@ ShiftRegisterPWM *ShiftRegisterPWM::singleton = {0};
 //Timer 1 interrupt service routine (ISR)
 ISR(TIMER1_COMPA_vect)
 {          // function which will be called when an interrupt occurs at timer 1
-    cli(); //cli(); // disable interrupts (in case update method takes too long)
+    //cli(); //cli(); // disable interrupts (in case update method takes too long)
     ShiftRegisterPWM::singleton->update();
-    sei(); //sei(); // re-enable
+    //sei(); //sei(); // re-enable
 }
 
 #endif
