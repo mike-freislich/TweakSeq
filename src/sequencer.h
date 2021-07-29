@@ -41,6 +41,7 @@ class Sequencer
 {
 private:
   Dialog dialog = Dialog();
+  uint8_t shuffle = 50;  // TODO: implement shuffle
   short currentStep = -1;
   Note currentNote;
   Note previousNote;
@@ -102,7 +103,11 @@ public:
    * the Sequencer's BPM Clock timer
    * @param bpm specifies the beats per minute to set
    */
-  void setBpm(uint16_t bpm) { bpmClock.timeout = 60.0 / bpm * 1000; this->bpm = bpm;}
+  void setBpm(uint16_t bpm)
+  {
+    bpmClock.timeout = 60.0 / bpm * 1000;
+    this->bpm = bpm;
+  }
   uint16_t getBpm() { return bpm; }
   void setGateLength(uint8_t value) { gateLength = value; }
   void setGlideTime(float value) { portamento = value; }
@@ -178,9 +183,12 @@ public:
 
   void closeGate()
   {
-    gateOpen = 0;
-    sreg->set(outGate, ledOFF);
-    sreg->set(ledGate, ledOFF);
+    if (!pattern.getTie(currentStep))
+    {
+      gateOpen = 0;
+      sreg->set(outGate, ledOFF);
+      sreg->set(ledGate, ledOFF);
+    }
   }
 
   void pause()
@@ -303,8 +311,8 @@ public:
     note.stepNumber = currentStep;
     uint8_t stepData = ((octave - 1) * 12) + keyPressed;
     note.midiNote = stepData + MIDI_OFFSET;
-    note.isRest = (stepData == REST);
-    note.isTie = (stepData == TIE);
+    note.isRest = false;
+    note.isTie = pattern.getTie(currentStep);
     note.octave = octave;
     note.pitch = keyPressed;
     note.voltage = pitchToVoltage(note.octave, note.pitch);
@@ -316,50 +324,26 @@ public:
     Note note;
     note.stepNumber = atIndex;
     uint8_t stepData = pattern.note[atIndex];
-
-    note.isRest = (stepData == REST);
-    note.isTie = (stepData == TIE);
-
-    if (!note.isRest && !note.isTie)
-    {
-      note.octave = (stepData / 12.0) + 1;
-      note.pitch = (stepData % 12) + 1;
-      note.midiNote = stepData + MIDI_OFFSET;
-    }
+    note.isRest = pattern.getRest(atIndex);
+    note.isTie = pattern.getTie(atIndex);
+    note.octave = (stepData / 12.0) + 1;
+    note.pitch = (stepData % 12) + 1;
+    note.midiNote = stepData + MIDI_OFFSET;
 
     if (note.isRest)
-    {
       note.voltage = 0;
-    }
-    else if (note.isTie)
-    {
-      note.pitch = currentNote.pitch;
-      note.voltage = currentNote.voltage;
-    }
     else
-    {
       note.voltage = pitchToVoltage(note.octave, note.pitch);
-    }
-    currentNote = note;
 
+    currentNote = note;
     return note;
   }
 
   void setPatternNote(Note note)
   {
-    uint8_t noteData;
-    if (note.isRest)
-    {
-      noteData = REST;
-    }
-    else if (note.isTie)
-    {
-      noteData = TIE;
-    }
-    else
-      noteData = note.pitch + (note.octave - 1) * 12;
-
-    pattern.note[currentStep] = noteData;
+    pattern.setRest(currentStep, note.isRest);
+    pattern.setTie(currentStep, note.isTie);
+    pattern.note[currentStep] = note.pitch + (note.octave - 1) * 12;
   }
 
   // send MIDI message
@@ -415,10 +399,13 @@ public:
   {
     Note note;
     note.isRest = true;
-    note.octave = 0;
-    note.pitch = 0;
     setPatternNote(note);
     currentStep = nextStep(currentStep);
+    displayStep();
+  }
+
+  void patternInsertTie() {
+    pattern.setTie(currentStep, !pattern.getTie(currentStep));
     displayStep();
   }
 

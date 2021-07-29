@@ -52,7 +52,6 @@ void setup()
 #if (LOGGING) || (SHOWMEM)
     Serial.begin(57600);
 #endif
-    testPattern();
 #if (LOGGING)
     Serial.println(F("loading..."));
 #endif
@@ -305,7 +304,9 @@ void handleFunctionButtons()
         Serial.println(F("Enter pressed"));
 #endif
         if (seq.isStepEditing())
-            seq.patternInsertRest();
+            //seq.patternInsertRest(); // TODO: figure out UI for rest vs. tie... long press?
+            seq.patternInsertTie();
+            
         else
             showFreeMemory(99);
     }

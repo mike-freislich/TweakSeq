@@ -8,9 +8,6 @@
 #include "MemoryFree.h"
 #endif
 
-/// NOTE DATA SPEC
-/// TODO: add tie support
-
 // Memory Banks
 const uint8_t BANK_MAX = 4; // number of pattern banks
 uint8_t memBank = 0;
@@ -36,11 +33,6 @@ void showFreeMemory(uint8_t i = 99)
   Serial.print(F("]="));
   Serial.println(freeMemory());
 #endif
-}
-
-void testPattern()
-{
-  
 }
 
 void savePattern(uint8_t toSlot, uint8_t inBank)

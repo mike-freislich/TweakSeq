@@ -12,11 +12,24 @@ struct Pattern
   uint16_t tieData;
   uint16_t restData;
   bool getTie(uint8_t position) { return bitRead(tieData, position); }
-  void setTie(uint8_t position) { bitSet(tieData, position); }
+  void setTie(uint8_t position, bool isTie = true)
+  {
+    if (isTie)
+      bitSet(tieData, position);
+    else
+      bitClear(tieData, position);
+  }
   bool getRest(uint8_t position) { return bitRead(restData, position); }
-  void setRest(uint8_t position) { bitSet(restData, position); }
+  void setRest(uint8_t position, bool isRest = true)
+  {
+    if (isRest)
+      bitSet(restData, position);
+    else
+      bitClear(restData, position);
+  }
   uint8_t *bytes() { return (uint8_t *)this; }
-  static Pattern fromBytes(uint8_t *data) {
+  static Pattern fromBytes(uint8_t *data)
+  {
     Pattern p = Pattern();
     memcpy(&p, data, sizeof(Pattern));
     return p;
@@ -32,14 +45,14 @@ Pattern newPatternFromBytes(uint8_t *bytes)
 {
   Pattern p;
   uint8_t *data = (uint8_t *)&p;
-     #if (LOGGING)
+#if (LOGGING)
   Serial.print("pattern size: ");
   Serial.println(sizeof(Pattern));
-  #endif
-  
-  for (byte i = 0; i < sizeof(Pattern); i ++)
+#endif
+
+  for (byte i = 0; i < sizeof(Pattern); i++)
     data[i] = bytes[i];
-  
+
   return p;
 }
 
