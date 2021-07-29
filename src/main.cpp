@@ -1,5 +1,5 @@
-#define LOGGING true
-#define SHOWMEM true
+#define LOGGING false
+#define SHOWMEM false
 
 #include <Arduino.h>
 #include <avr/io.h>
@@ -62,6 +62,7 @@ void setup()
     sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Slow);
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
     seq.setBpm(140);
+    loadPattern(0,0);
     showFreeMemory(7);
 }
 
@@ -418,7 +419,7 @@ void handleLeftRotaryEncoder()
             break;
 
         case 2: // Gate Length
-                    
+
             seq.setGateLength(4 * value + 1);
             seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;

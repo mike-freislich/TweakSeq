@@ -47,7 +47,7 @@ uint32_t dutyCycleMask;
 class ShiftRegisterPWM
 {
 private:
-    SimpleTimer flashTimer = SimpleTimer(300);
+    SimpleTimer flashTimer = SimpleTimer(150);
     bool flashState = false;
 
     inline void shiftOut(uint8_t data) const
