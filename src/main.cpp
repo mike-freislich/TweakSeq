@@ -49,7 +49,7 @@ void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
 
 void setup()
 {
-#if (LOGGING) || (SHOWMEM) || GRAPHING
+#if (LOGGING) || (SHOWMEM)
     Serial.begin(57600);
 #endif
     testPattern();
@@ -241,6 +241,8 @@ void updateControls()
 {
     if (uiStateChanged())
         showKnobSelectorLeds();
+
+    ShiftRegisterPWM::singleton->flash();
 
     encoderButtons.update();
     handleEncoderButtons();

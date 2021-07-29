@@ -63,7 +63,7 @@ public:
 
     void update()
     {
-        if (timed && dialogTimer.done())
+        if (timed && dialogTimer.done() && visible)
             hide();
     }
 
