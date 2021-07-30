@@ -40,6 +40,7 @@ volatile uint8_t dutyCounter = 0;
 volatile uint8_t isrCounter = 0;
 uint32_t ioData = (uint32_t)0x00000000;
 uint32_t ioFlashData = (uint32_t)0x00000000;
+uint32_t ioDimData = (uint32_t)0x00000000;
 
 uint8_t speed = resolution;
 uint32_t dutyCycleMask;
@@ -48,7 +49,9 @@ class ShiftRegisterPWM
 {
 private:
     SimpleTimer flashTimer = SimpleTimer(150);
+    SimpleTimer dimTimer = SimpleTimer(50);
     bool flashState = false;
+    bool dimState = false;
 
     inline void shiftOut(uint8_t data) const
     {
@@ -184,7 +187,7 @@ public:
     void flash()
     {
         if (flashTimer.done())
-        {            
+        {
             flashState = !flashState;
             /*
             for (uint8_t i = 0; i < 32; i++)
@@ -197,6 +200,26 @@ public:
             */
             ioData ^= ioFlashData;
         }
+
+        if (dimTimer.done()) {
+
+            dimState = !dimState;
+            ioData ^= ioDimData;
+        }
+    }    
+
+    enum Brightness {
+        DIMMED,
+        FULL
+    };
+
+    void setBrightness(uint8_t pin, Brightness brightness)
+    {
+        if (brightness == Brightness::FULL)
+            bitClear(ioDimData, pin);
+        else
+            bitSet(ioDimData, pin);
+            
     }
 
     /**
@@ -232,7 +255,6 @@ public:
         return bitRead(ioFlashData, pin) == 1 ? 2 : bitRead(ioData, pin);
     }
 
-    
     uint32_t getData() { return ioData; }
     void setData(uint32_t data)
     {
@@ -245,9 +267,11 @@ public:
         ioFlashData = data;
     }
 
-    void clearSequenceLights() {
-        ioData      &= (uint32_t)0xFFFF0000;  
-        ioFlashData   &= (uint32_t)0xFFFF0000;
+    void clearSequenceLights()
+    {
+        ioData &= (uint32_t)0xFFFF0000;
+        ioFlashData &= (uint32_t)0xFFFF0000;
+        ioDimData &= (uint32_t) 0xFFFF0000;
     }
 
     /** 
@@ -342,7 +366,7 @@ ShiftRegisterPWM *ShiftRegisterPWM::singleton = {0};
 
 //Timer 1 interrupt service routine (ISR)
 ISR(TIMER1_COMPA_vect)
-{          // function which will be called when an interrupt occurs at timer 1
+{ // function which will be called when an interrupt occurs at timer 1
     //cli(); //cli(); // disable interrupts (in case update method takes too long)
     ShiftRegisterPWM::singleton->update();
     //sei(); //sei(); // re-enable

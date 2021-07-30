@@ -39,6 +39,7 @@ MP4822 dac;
 Sequencer seq;
 ShiftRegisterPWM sr;
 StorageAction storageAction = StorageAction::LOAD_PATTERN;
+SimpleTimer flashStepTimer = SimpleTimer();
 
 void interruptCallback() { seq.externalClockTrigger(); }
 void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
@@ -62,7 +63,7 @@ void setup()
     sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Slow);
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
     seq.setBpm(140);
-    loadPattern(0,0);
+    loadPattern(0, 0);
     showFreeMemory(7);
 }
 
@@ -119,10 +120,12 @@ void loop()
 
     switch (uiState)
     {
-    case UIState::SEQUENCER: updateControls();
+    case UIState::SEQUENCER:
+        updateControls();
     case UIState::ACTION_BANK_SELECT:
     case UIState::ACTION_PATTERN_SELECT:
-    case UIState::ACTION_COMPLETE: updatePatternStorage();
+    case UIState::ACTION_COMPLETE:
+        updatePatternStorage();
     }
 }
 
@@ -143,7 +146,7 @@ void selectBank(Knob *k, UIState nextState)
         sr.set(ledENTER, LedState::ledFLASH);
         for (byte i = 16; i < 25; i++)
             sr.set(i, (i < 22) ? ledOFF : ledFLASH);
-        sr.set(16, ledFLASH); //TODO: not flashing?
+        sr.set(16, ledFLASH);
         seq.setValuePicker(memBank, 0, 3, false);
     }
 
@@ -172,7 +175,7 @@ void selectPattern(Knob *k, UIState nextState)
         Serial.println(F("select pattern"));
 #endif
         k->setValue(memPattern);
-        sr.set(19, ledFLASH); //TODO: not flashing?
+        sr.set(19, ledFLASH);
         seq.setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
     }
 
@@ -299,17 +302,30 @@ void handleFunctionButtons()
         }
     }
 
+    if (flashStepTimer.done(false))
+        seq.displayStep();
+
+    if (seq.isStepEditing() && !flashStepTimer.running)
+    {
+        if (funcButtons.onPressAfter(ENTER, 1000))
+        {
+            seq.dimStep();
+            seq.patternInsertTie();
+        }
+
+        if (funcButtons.onReleaseBefore(ENTER, 500))
+        {            
+            seq.flashStep();
+            seq.patternInsertRest();
+        }
+    }
+
     if (funcButtons.onPress(ENTER))
     {
 #if (LOGGING)
         Serial.println(F("Enter pressed"));
 #endif
-        if (seq.isStepEditing())
-            //seq.patternInsertRest(); // TODO: figure out UI for rest vs. tie... long press?
-            seq.patternInsertTie();
-            
-        else
-            showFreeMemory(99);
+        showFreeMemory(99);
     }
 
     if (funcButtons.onPress(SAVE))

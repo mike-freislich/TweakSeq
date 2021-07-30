@@ -230,12 +230,26 @@ public:
     dialog.show();
   }
 
+  void flashStep() {
+    sreg->set(currentStep % 16, LedState::ledFLASH);
+  }
+
+  void dimStep() {
+    sreg->setBrightness(currentStep % 16, ShiftRegisterPWM::Brightness::DIMMED);
+  }
+
   void displayStep()
   {
     if (!dialog.isVisible())
     {
-      sreg->clearSequenceLights();
-      sreg->set(currentStep % 16, LedState::ledON);
+      sreg->clearSequenceLights();      
+      LedState state = (currentNote.isRest) ? LedState::ledFLASH : LedState::ledON;
+      if (currentNote.isTie) {
+        state = LedState::ledON;
+        sreg->setBrightness(currentStep, ShiftRegisterPWM::Brightness::DIMMED);
+      } 
+      sreg->set(currentStep % 16, state); 
+      
     }
   }
 
@@ -334,6 +348,7 @@ public:
       note.voltage = pitchToVoltage(note.octave, note.pitch);
 
     currentNote = note;
+
     return note;
   }
 
@@ -387,6 +402,8 @@ public:
 
     if (isStepEditing())
     {
+      currentNote.isRest = false;
+      currentNote.isTie = false;
       setPatternNote(currentNote);
       currentStep = nextStep(currentStep);
       displayStep();
@@ -395,16 +412,21 @@ public:
 
   void patternInsertRest()
   {
-    Note note;
-    note.isRest = true;
-    setPatternNote(note);
-    currentStep = nextStep(currentStep);
-    displayStep();
+    // Note note;
+    // note.isRest = true;
+    // note.isTie = false;
+    // //setPatternNote(note);
+    pattern.setRest(currentStep, !pattern.getRest(currentStep));
+    pattern.setTie(currentStep, false);
+    //currentStep = nextStep(currentStep);
+    //displayStep();
   }
 
-  void patternInsertTie() {
+  void patternInsertTie() {    
     pattern.setTie(currentStep, !pattern.getTie(currentStep));
-    displayStep();
+    pattern.setRest(currentStep, false);
+    //currentStep = nextStep(currentStep);
+    //displayStep();
   }
 
   void update()

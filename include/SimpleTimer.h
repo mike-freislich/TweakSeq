@@ -32,8 +32,13 @@ public:
     if (!running) return false;
 
     bool val = (millis() - lastTime >= timeout);
-    if (val & restart)
-      start(timeout);    
+    if (val) {
+      if (restart)
+        start(timeout);
+      else
+        stop();
+    }
+
     return val;
   }
 };
