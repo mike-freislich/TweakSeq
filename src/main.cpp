@@ -1,4 +1,4 @@
-#define LOGGING false
+#define LOGGING true
 #define SHOWMEM false
 
 #include <Arduino.h>
@@ -74,11 +74,9 @@ void setupKnobs()
     knob[0]->setRange(ledOFF, 1, 1, 50); // brightness
     knob[0]->setRange(ledOFF, 2, 0, 24); // gate duration % of note
     knob[0]->setRange(ledON, 0, 1, MAXTEMPO / TEMPODIV);
-    knob[0]->setRange(ledON, 1, 1, 50); // brightness
-    knob[0]->setRange(ledON, 2, 1, 25); // gate duration % of note
-    knob[0]->addModes(new KnobFunction[6]{
-        TempoAdjust, StepSelect, GateTime,
-        TempoAdjust, StepSelect, GateTime});
+    knob[0]->setRange(ledON, 1, 1, 50);   // brightness
+    knob[0]->setRange(ledON, 2, -25, 25); // shuffle -10:hard shuffle | 0:no shuffle | +10: hard reverse shuffle
+    knob[0]->addModes(new KnobFunction[6]{TempoAdjust, StepSelect, GateTime, TempoAdjust, StepSelect, GateTime});
     knob[0]->setMode(0);
     knob[0]->setValue(120 / 10); // bpmMilliseconds
 
@@ -88,7 +86,7 @@ void setupKnobs()
     knob[1]->setRange(ledOFF, 2, -24, 24); // pitch
     knob[1]->setRange(ledON, 0, 1, 4);     // play mode
     knob[1]->setRange(ledON, 1, 0, 24);    // glide time
-    knob[1]->setRange(ledON, 2, 1, 12);    // pitch
+    knob[1]->setRange(ledON, 2, -24, 24);  // pitch
     knob[1]->addModes(new KnobFunction[6]{
         PlayMode, GlideTime, Pitch,
         PlayMode, GlideTime, Pitch});
@@ -198,6 +196,7 @@ void finishedStorageAction()
 {
     seq.setValuePicker(9, 0, 9, true, 500);
     seq.setPatternLength(pattern.length);
+    seq.setShuffle(pattern.shuffle);
     sr.set(ledENTER, LedState::ledOFF);
     uiState = UIState::SEQUENCER;
 #if (LOGGING)
@@ -243,7 +242,7 @@ void showKnobSelectorLeds()
 void updateControls()
 {
     if (uiStateChanged())
-        showKnobSelectorLeds();    
+        showKnobSelectorLeds();
 
     encoderButtons.update();
     handleEncoderButtons();
@@ -310,7 +309,7 @@ void handleFunctionButtons()
         }
 
         if (funcButtons.onReleaseBefore(ENTER, 500))
-        {            
+        {
             seq.flashStep();
             seq.patternInsertRest();
         }
@@ -404,7 +403,6 @@ void handleLeftRotaryEncoder()
                 newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);
             }
             seq.setBpm(newTempo);
-            //seq.setGateLength();
             seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
         }
@@ -425,15 +423,26 @@ void handleLeftRotaryEncoder()
                 seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
                 break;
 
-            case ledFLASH: // not assigned
+            default:
                 break;
             }
             break;
 
         case 2: // Gate Length
+            switch (sr.get(ledSHIFT))
+            {
+            case LedState::ledOFF:
+                seq.setGateLength(4 * value + 1);
+                seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
+                break;
+            case LedState::ledON: // Shuffle                
+                seq.changeShuffle(k->direction());                               
+                seq.setValuePicker(seq.getShuffle() / 2 - 25, k->getRangeMin(), k->getRangeMax());
+                break;
+            default:
+                break;
+            }
 
-            seq.setGateLength(4 * value + 1);
-            seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
             break;
         }
         showFreeMemory();

@@ -40,8 +40,8 @@ ClockMode clockMode = ClockMode::CLK_INTERNAL;
 class Sequencer
 {
 private:
-  Dialog dialog = Dialog();
-  uint8_t shuffle = 50;  // TODO: implement shuffle
+  Dialog dialog = Dialog();  
+  uint8_t shuffleNoteFlag = 0;
   short currentStep = -1;
   Note currentNote;
   Note previousNote;
@@ -75,7 +75,7 @@ public:
     clockMode = CLK_INTERNAL;
     sreg = ShiftRegisterPWM::singleton;
     setBpm(120);
-    bpmClock.start((uint32_t)getBpmInMilliseconds());
+    bpmClock.start(getShuffleTime());
   }
 
   void setRecording(bool startRecording)
@@ -108,9 +108,13 @@ public:
     this->bpm = bpm;
   }
   uint16_t getBpm() { return bpm; }
-  void setGateLength(uint8_t value) {gateLength = value; }
+  void setGateLength(uint8_t value) { gateLength = value; }
   void setGlideTime(float value) { portamento = value; }
-  void setPatternLength(int value) { patternLength = value; pattern.length = value; }
+  void setPatternLength(int value)
+  {
+    patternLength = value;
+    pattern.length = value;
+  }
   void setCurveShape(Glide::CurveType value) { glide.setCurve(value); }
   void setOctave(uint8_t value) { octave = value; }
   int8_t getTranspose() { return transpose; }
@@ -120,6 +124,25 @@ public:
     if (direction != 0)
       transpose = constrain(this->transpose + direction, -24, 24);
   }
+
+  void changeShuffle(int8_t direction)
+  {
+    #if (LOGGING)
+    Serial.print(F("shuffle before : "));
+    Serial.println(pattern.shuffle);
+    #endif
+
+    if (direction != 0)
+      pattern.shuffle = constrain(pattern.shuffle + direction * 2, 10, 90);
+
+    #if (LOGGING)
+    Serial.print(F("shuffle : "));
+    Serial.println(pattern.shuffle);
+    #endif
+  }
+
+  uint8_t getShuffle() { return pattern.shuffle; }
+  void setShuffle(uint8_t newShuffle) { pattern.shuffle = constrain(newShuffle, 0, 100); }
 
   /* ---------------- CLOCK HANDLING  ----------------
     */
@@ -172,10 +195,17 @@ public:
     sreg->set(outClock, ledOFF);
   }
 
+  inline uint32_t getShuffleTime()
+  {
+    uint32_t shuffle = round(getBpmInMilliseconds() * (abs(-1.0 * (shuffleNoteFlag % 2) + pattern.shuffle / 100.0)));
+    return shuffle;
+  }
+
   void openGate()
-  {        
-    uint32_t time = constrain(gateLength / 100.0 * getBpmInMilliseconds(), 2, getBpmInMilliseconds()-2);  
-    gateTimer.start(time);
+  {
+    uint32_t time = constrain(gateLength / 100.0 * getBpmInMilliseconds(), 2, getBpmInMilliseconds() - 2);
+
+    gateTimer.start(min(gateLength / 100.0 * getShuffleTime(), time));
     sreg->set(outGate, ledON);
     sreg->set(ledGate, ledON);
   }
@@ -230,11 +260,13 @@ public:
     dialog.show();
   }
 
-  void flashStep() {
+  void flashStep()
+  {
     sreg->set(currentStep % 16, LedState::ledFLASH);
   }
 
-  void dimStep() {
+  void dimStep()
+  {
     sreg->setBrightness(currentStep % 16, ShiftRegisterPWM::Brightness::DIMMED);
   }
 
@@ -242,14 +274,14 @@ public:
   {
     if (!dialog.isVisible())
     {
-      sreg->clearSequenceLights();      
+      sreg->clearSequenceLights();
       LedState state = (currentNote.isRest) ? LedState::ledFLASH : LedState::ledON;
-      if (currentNote.isTie) {
+      if (currentNote.isTie)
+      {
         state = LedState::ledON;
         sreg->setBrightness(currentStep, ShiftRegisterPWM::Brightness::DIMMED);
-      } 
-      sreg->set(currentStep % 16, state); 
-      
+      }
+      sreg->set(currentStep % 16, state);
     }
   }
 
@@ -385,7 +417,8 @@ public:
     else
     {
       openGate();
-      glide.begin(this->getBpmInMilliseconds(), portamento, previousNote.voltage, currentNote.voltage);
+
+      glide.begin(getShuffleTime(), portamento, previousNote.voltage, currentNote.voltage);
     }
 
     /* MIDImessage(100, note.midiNote, 120);       // TODO: MIDI
@@ -415,13 +448,15 @@ public:
     bool rest = !pattern.getRest(currentStep);
     pattern.setRest(currentStep, rest);
     pattern.setTie(currentStep, false);
-    
-    if (rest) pattern.note[currentStep] = 0;
+
+    if (rest)
+      pattern.note[currentStep] = 0;
     currentStep = nextStep(currentStep);
     displayStep();
   }
 
-  void patternInsertTie() {    
+  void patternInsertTie()
+  {
     pattern.setTie(currentStep, !pattern.getTie(currentStep));
     pattern.setRest(currentStep, false);
     currentStep = nextStep(currentStep);
@@ -431,7 +466,16 @@ public:
   void update()
   {
     if (bpmClock.done())
+    {
+      shuffleNoteFlag ^= 1;
+      uint32_t shuffleTime = getShuffleTime();
+      bpmClock.start(shuffleTime);
+#if (LOGGING)
+      //Serial.print(F("shuffle clock: "));
+      //Serial.println(shuffleTime);
+#endif
       bpmClockTick();
+    }
 
     if (gateTimer.done(false))
       closeGate();
@@ -442,7 +486,7 @@ public:
     dialog.update();
     if (dialog.didClose())
       displayStep();
-    
+
     ShiftRegisterPWM::singleton->flash();
   }
 };
