@@ -63,6 +63,7 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
     seq.setBpm(140);
     loadPattern(0, 0);
+    seq.setPatternLength(pattern.length);
     showFreeMemory(7);
 }
 

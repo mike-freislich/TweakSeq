@@ -12,6 +12,7 @@ struct Pattern
   uint16_t tieData;
   uint16_t restData;
   uint8_t length=16;
+  uint8_t shuffle=50;
   bool getTie(uint8_t position) { return bitRead(tieData, position); }
   void setTie(uint8_t position, bool isTie = true)
   {
