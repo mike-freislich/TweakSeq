@@ -1,5 +1,5 @@
-#define LOGGING true
-#define SHOWMEM false
+#define LOGGING false
+#define SHOWMEM true
 
 #include <Arduino.h>
 #include <avr/io.h>
@@ -70,10 +70,10 @@ void setup()
 void setupKnobs()
 {
     knob[0] = new Knob(0, encoderButtons, KNOB1_A, KNOB1_B);
-    knob[0]->setRange(ledOFF, 0, 20, MAXTEMPO / TEMPODIV);
+    knob[0]->setRange(ledOFF, 0, 0, MAXTEMPO / TEMPODIV);
     knob[0]->setRange(ledOFF, 1, 1, 50); // brightness
     knob[0]->setRange(ledOFF, 2, 0, 24); // gate duration % of note
-    knob[0]->setRange(ledON, 0, 1, MAXTEMPO / TEMPODIV);
+    knob[0]->setRange(ledON, 0, 20, MAXTEMPO / TEMPODIV);
     knob[0]->setRange(ledON, 1, 1, 50);   // brightness
     knob[0]->setRange(ledON, 2, -20, 20); // shuffle -10:hard shuffle | 0:no shuffle | +10: hard reverse shuffle
     knob[0]->addModes(new KnobFunction[6]{TempoAdjust, StepSelect, GateTime, TempoAdjust, StepSelect, GateTime});
@@ -393,17 +393,30 @@ void handleLeftRotaryEncoder()
             int16_t steps = k->getRangeMax() - k->getRangeMin();
             int16_t precisionPoint = steps / 2.0 + (k->getRangeMin() - 1);
 
+#if (LOGGING)
+            char buffer[100];
+            sprintf(buffer, "value: %d\tsteps: %d\tx-over: %d\t", value, steps, precisionPoint);
+            Serial.print(buffer);
+#endif
             if (value <= precisionPoint)
-                newTempo = k->getRangeMin() + ((value - k->getRangeMin()) * 25);
+                newTempo = k->getRangeMin() + ((value - k->getRangeMin()) * 10) + 20;
             else
             {
+#if (LOGGING)
+                Serial.print(" XO ");
+#endif
                 int16_t nonLinearSteps = k->getRangeMax() - precisionPoint;
                 float factor = (value - precisionPoint) / (double)nonLinearSteps;
                 newTempo = value * factor * TEMPODIV;
-                newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 25);
+                newTempo += k->getRangeMin() + ((value - k->getRangeMin()) * 10);
             }
             seq.setBpm(newTempo);
+#if (LOGGING)
+            Serial.print(F("bpm: "));
+            Serial.println(newTempo);
+#endif
             seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
+
             break;
         }
         case 1:
@@ -435,14 +448,15 @@ void handleLeftRotaryEncoder()
                 seq.setGateLength(4 * value + 1);
                 seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
                 break;
-            case LedState::ledON: // Shuffle                                
+            case LedState::ledON: // Shuffle
             {
-                int8_t shuffleDisplayValue = (seq.changeShuffle(k->direction()) -50) / 2;                
+                int8_t shuffleDisplayValue = (seq.changeShuffle(k->direction()) - 50) / 2;
                 k->setValue(shuffleDisplayValue);
                 seq.setValuePicker(shuffleDisplayValue, k->getRangeMin(), k->getRangeMax());
                 break;
             }
-            default: break;
+            default:
+                break;
             }
 
             break;
