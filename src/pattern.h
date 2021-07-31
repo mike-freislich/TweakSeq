@@ -11,6 +11,7 @@ struct Pattern
   uint8_t note[16];
   uint16_t tieData;
   uint16_t restData;
+  uint8_t length=16;
   bool getTie(uint8_t position) { return bitRead(tieData, position); }
   void setTie(uint8_t position, bool isTie = true)
   {

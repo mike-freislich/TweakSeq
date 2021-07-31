@@ -110,7 +110,7 @@ public:
   uint16_t getBpm() { return bpm; }
   void setGateLength(uint8_t value) {gateLength = value; }
   void setGlideTime(float value) { portamento = value; }
-  void setPatternLength(int value) { patternLength = value; }
+  void setPatternLength(int value) { patternLength = value; pattern.length = value; }
   void setCurveShape(Glide::CurveType value) { glide.setCurve(value); }
   void setOctave(uint8_t value) { octave = value; }
   int8_t getTranspose() { return transpose; }
@@ -139,7 +139,7 @@ public:
     uint32_t now = millis();
     uint32_t elapsed = now - lastClockExt;
 
-    if (elapsed > 20)
+    if (elapsed > 4)
     {
       lastClockExt = now;
       beatFrom(CLK_EXTERNAL);
@@ -159,7 +159,7 @@ public:
   {
     if (fromClock == clockMode)
     {
-      clockLedTimer.start(2);
+      clockLedTimer.start(4);
       sreg->set(ledClock, ledON);
       sreg->set(outClock, ledON);
       beat();
@@ -412,21 +412,20 @@ public:
 
   void patternInsertRest()
   {
-    // Note note;
-    // note.isRest = true;
-    // note.isTie = false;
-    // //setPatternNote(note);
-    pattern.setRest(currentStep, !pattern.getRest(currentStep));
+    bool rest = !pattern.getRest(currentStep);
+    pattern.setRest(currentStep, rest);
     pattern.setTie(currentStep, false);
-    //currentStep = nextStep(currentStep);
-    //displayStep();
+    
+    if (rest) pattern.note[currentStep] = 0;
+    currentStep = nextStep(currentStep);
+    displayStep();
   }
 
   void patternInsertTie() {    
     pattern.setTie(currentStep, !pattern.getTie(currentStep));
     pattern.setRest(currentStep, false);
-    //currentStep = nextStep(currentStep);
-    //displayStep();
+    currentStep = nextStep(currentStep);
+    displayStep();
   }
 
   void update()
@@ -441,6 +440,10 @@ public:
       clockLedOff();
 
     dialog.update();
+    if (dialog.didClose())
+      displayStep();
+    
+    ShiftRegisterPWM::singleton->flash();
   }
 };
 

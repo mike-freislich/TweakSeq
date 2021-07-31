@@ -29,8 +29,10 @@ public:
   {
     for (uint8_t x = 0; x < 30; x++)
     {
+#if (LOGGING)
       Serial.print(curveDataAx[x]);
       Serial.print(",");
+#endif
     }
   }
 

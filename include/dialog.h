@@ -32,6 +32,7 @@ protected:
     SimpleTimer dialogTimer = SimpleTimer(DIALOG_TIMEOUT);
     uint16_t timeout;
     bool timed, visible;
+    bool _didClose = false;
 
 public:
     int16_t value;
@@ -52,12 +53,16 @@ public:
             dialogTimer.stop();
 
         visible = true;
+        _didClose = false;
     }
 
     void hide()
     {
-        Serial.println(F("hiding"));
-        visible = false;
+        if (visible)
+        {
+            visible = false;
+            _didClose = true;
+        }
         ShiftRegisterPWM::singleton->clearSequenceLights();
     }
 
@@ -75,8 +80,10 @@ public:
         this->high = high;
         this->timed = timed;
 
+        ShiftRegisterPWM::singleton->clearSequenceLights();
+
         bufferDisplay();
-        show();        
+        show();
     }
 
     virtual void bufferDisplay()
@@ -111,6 +118,16 @@ public:
         *uiFlashData &= (uint32_t)0xFFFF0000;
         *uiData |= displayData;
         *uiFlashData |= flashData;
+    }
+
+    bool didClose()
+    {
+        if (_didClose)
+        {
+            _didClose = false;
+            return true;
+        }
+        return false;
     }
 };
 

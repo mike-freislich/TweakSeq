@@ -49,7 +49,7 @@ class ShiftRegisterPWM
 {
 private:
     SimpleTimer flashTimer = SimpleTimer(150);
-    SimpleTimer dimTimer = SimpleTimer(50);
+    SimpleTimer dimTimer = SimpleTimer(25);
     bool flashState = false;
     bool dimState = false;
 
@@ -189,15 +189,6 @@ public:
         if (flashTimer.done())
         {
             flashState = !flashState;
-            /*
-            for (uint8_t i = 0; i < 32; i++)
-            {
-                if (bitRead(ioFlashData, i))
-                    bitSet(ioData, flashState);
-            }
-            Serial.print("flash: ");
-            Serial.println(flashState);
-            */
             ioData ^= ioFlashData;
         }
 

@@ -39,7 +39,6 @@ MP4822 dac;
 Sequencer seq;
 ShiftRegisterPWM sr;
 StorageAction storageAction = StorageAction::LOAD_PATTERN;
-SimpleTimer flashStepTimer = SimpleTimer();
 
 void interruptCallback() { seq.externalClockTrigger(); }
 void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
@@ -145,8 +144,8 @@ void selectBank(Knob *k, UIState nextState)
         k->setValue(memBank);
         sr.set(ledENTER, LedState::ledFLASH);
         for (byte i = 16; i < 25; i++)
-            sr.set(i, (i < 22) ? ledOFF : ledFLASH);
-        sr.set(16, ledFLASH);
+            sr.set(i, (i < 22) ? ledOFF : ledON);
+        sr.set(16, LedState::ledFLASH);
         seq.setValuePicker(memBank, 0, 3, false);
     }
 
@@ -175,7 +174,7 @@ void selectPattern(Knob *k, UIState nextState)
         Serial.println(F("select pattern"));
 #endif
         k->setValue(memPattern);
-        sr.set(19, ledFLASH);
+        sr.set(19, LedState::ledFLASH);
         seq.setValuePicker(memPattern, 0, PATTERN_MAX - 1, false);
     }
 
@@ -197,6 +196,7 @@ void selectPattern(Knob *k, UIState nextState)
 void finishedStorageAction()
 {
     seq.setValuePicker(9, 0, 9, true, 500);
+    seq.setPatternLength(pattern.length);
     sr.set(ledENTER, LedState::ledOFF);
     uiState = UIState::SEQUENCER;
 #if (LOGGING)
@@ -242,9 +242,7 @@ void showKnobSelectorLeds()
 void updateControls()
 {
     if (uiStateChanged())
-        showKnobSelectorLeds();
-
-    ShiftRegisterPWM::singleton->flash();
+        showKnobSelectorLeds();    
 
     encoderButtons.update();
     handleEncoderButtons();
@@ -302,10 +300,7 @@ void handleFunctionButtons()
         }
     }
 
-    if (flashStepTimer.done(false))
-        seq.displayStep();
-
-    if (seq.isStepEditing() && !flashStepTimer.running)
+    if (seq.isStepEditing())
     {
         if (funcButtons.onPressAfter(ENTER, 1000))
         {
