@@ -51,9 +51,9 @@ private:
     return value;
   }
 
-  short constrainPos(short pos, short rangeMin, short rangeMax)
-  {
-    short newPos = constrain(pos, rangeMin, rangeMax);
+  int8_t constrainPos(int8_t pos, int8_t rangeMin, int8_t rangeMax)
+  {    
+    int8_t newPos = constrain(pos, rangeMin, rangeMax);
     
     if (pos > rangeMax)
       newPos = rangeMax;

@@ -125,24 +125,26 @@ public:
       transpose = constrain(this->transpose + direction, -24, 24);
   }
 
-  void changeShuffle(int8_t direction)
+  uint8_t changeShuffle(int8_t direction)
   {
     #if (LOGGING)
     Serial.print(F("shuffle before : "));
-    Serial.println(pattern.shuffle);
+    Serial.print(pattern.shuffle);
     #endif
 
     if (direction != 0)
       pattern.shuffle = constrain(pattern.shuffle + direction * 2, 10, 90);
 
     #if (LOGGING)
-    Serial.print(F("shuffle : "));
+    Serial.print(F("\tafter : "));
     Serial.println(pattern.shuffle);
     #endif
+
+    return pattern.shuffle;
   }
 
   uint8_t getShuffle() { return pattern.shuffle; }
-  void setShuffle(uint8_t newShuffle) { pattern.shuffle = constrain(newShuffle, 0, 100); }
+  void setShuffle(uint8_t newShuffle) { pattern.shuffle = constrain(newShuffle, 10, 90); }
 
   /* ---------------- CLOCK HANDLING  ----------------
     */
@@ -197,7 +199,7 @@ public:
 
   inline uint32_t getShuffleTime()
   {
-    uint32_t shuffle = round(getBpmInMilliseconds() * (abs(-1.0 * (shuffleNoteFlag % 2) + pattern.shuffle / 100.0)));
+    uint32_t shuffle = round(getBpmInMilliseconds() * (abs(-1.0 * (shuffleNoteFlag % 2) + (100-pattern.shuffle) / 100.0)));
     return shuffle;
   }
 
@@ -255,8 +257,7 @@ public:
   }
 
   void setValuePicker(int16_t value, int16_t low, int16_t high, bool timed = true, uint16_t ms = DIALOG_TIMEOUT)
-  {
-    // TODO sync up the encoder position with the incoming value
+  {    
     dialog.setDisplayValue(value, low, high, timed, ms);
     dialog.writeoutDisplayBuffer(&ioData, &ioFlashData);
     dialog.show();

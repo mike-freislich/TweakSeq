@@ -75,7 +75,7 @@ void setupKnobs()
     knob[0]->setRange(ledOFF, 2, 0, 24); // gate duration % of note
     knob[0]->setRange(ledON, 0, 1, MAXTEMPO / TEMPODIV);
     knob[0]->setRange(ledON, 1, 1, 50);   // brightness
-    knob[0]->setRange(ledON, 2, -25, 25); // shuffle -10:hard shuffle | 0:no shuffle | +10: hard reverse shuffle
+    knob[0]->setRange(ledON, 2, -20, 20); // shuffle -10:hard shuffle | 0:no shuffle | +10: hard reverse shuffle
     knob[0]->addModes(new KnobFunction[6]{TempoAdjust, StepSelect, GateTime, TempoAdjust, StepSelect, GateTime});
     knob[0]->setMode(0);
     knob[0]->setValue(120 / 10); // bpmMilliseconds
@@ -276,7 +276,7 @@ void handleFunctionButtons()
     if (funcButtons.onPress(PLAY))
     {
 #if (LOGGING)
-        Serial.print(F("play-pressed"));
+        Serial.println(F("play-pressed"));
 #endif
 
         if (sr.get(ledSHIFT) == LedState::ledON)
@@ -435,12 +435,14 @@ void handleLeftRotaryEncoder()
                 seq.setGateLength(4 * value + 1);
                 seq.setValuePicker(value, k->getRangeMin(), k->getRangeMax());
                 break;
-            case LedState::ledON: // Shuffle                
-                seq.changeShuffle(k->direction());                               
-                seq.setValuePicker(seq.getShuffle() / 2 - 25, k->getRangeMin(), k->getRangeMax());
+            case LedState::ledON: // Shuffle                                
+            {
+                int8_t shuffleDisplayValue = (seq.changeShuffle(k->direction()) -50) / 2;                
+                k->setValue(shuffleDisplayValue);
+                seq.setValuePicker(shuffleDisplayValue, k->getRangeMin(), k->getRangeMax());
                 break;
-            default:
-                break;
+            }
+            default: break;
             }
 
             break;
@@ -470,7 +472,9 @@ void handleMiddleRotaryEncoder()
 
         case 2: // pitch
             seq.setTranspose(k->direction());
-            seq.setValuePicker(seq.getTranspose(), k->getRangeMin(), k->getRangeMax());
+            int8_t newTranspose = seq.getTranspose();
+            k->setValue(newTranspose);
+            seq.setValuePicker(newTranspose, k->getRangeMin(), k->getRangeMax());
             break;
         }
         showFreeMemory();
