@@ -228,6 +228,7 @@ public:
 
   void play()
   {
+    shuffleNoteFlag = (currentStep+1) % 2;
     isPaused = false;
     ShiftRegisterPWM::singleton->set(ledPLAY, ledON);
   }
@@ -255,6 +256,7 @@ public:
 
   void setValuePicker(int16_t value, int16_t low, int16_t high, bool timed = true, uint16_t ms = DIALOG_TIMEOUT)
   {
+    // TODO sync up the encoder position with the incoming value
     dialog.setDisplayValue(value, low, high, timed, ms);
     dialog.writeoutDisplayBuffer(&ioData, &ioFlashData);
     dialog.show();
