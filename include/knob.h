@@ -173,6 +173,6 @@ public:
   uint8_t getIndex() { return index; }
 };
 
-Knob *knob[3];
+
 
 #endif

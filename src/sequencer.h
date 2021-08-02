@@ -10,6 +10,7 @@
 #include "SimpleTimer.h"
 #include "dialog.h"
 #include "uistate.h"
+#include "seqState.h"
 
 #pragma region CONSTANTS / ENUMS
 
@@ -40,21 +41,21 @@ ClockMode clockMode = ClockMode::CLK_INTERNAL;
 class Sequencer
 {
 private:
-  Dialog dialog = Dialog();  
+  Dialog dialog = Dialog();
   uint8_t shuffleNoteFlag = 0;
-  short currentStep = -1;
+  int8_t currentStep = -1;
   Note currentNote;
   Note previousNote;
   Glide glide;
   bool isPaused = true;
-  short transpose = 0;
+  int8_t transpose = 0;
 
   uint16_t bpm = 120;
   uint8_t curveIndex = Glide::CurveType::CURVE_B;
   float portamento = 0.2;
 
   uint8_t patternLength = 16;
-  short direction = 1;
+  int8_t direction = 1;
 
   uint8_t gateLength = 10;
   uint8_t octave = 1;
@@ -65,6 +66,7 @@ private:
   void setBpmInMilliseconds(uint32_t milliseconds) { bpmClock.timeout = milliseconds; }
 
 public:
+  SeqState state = SeqState();
   SimpleTimer bpmClock = SimpleTimer();
   SimpleTimer gateTimer = SimpleTimer();
   SimpleTimer clockLedTimer = SimpleTimer();
@@ -74,7 +76,7 @@ public:
   {
     clockMode = CLK_INTERNAL;
     sreg = ShiftRegisterPWM::singleton;
-    setBpm(120);
+    setBpm(140);
     bpmClock.start(getShuffleTime());
   }
 
@@ -127,18 +129,18 @@ public:
 
   uint8_t changeShuffle(int8_t direction)
   {
-    #if (LOGGING)
+#if (LOGGING)
     Serial.print(F("shuffle before : "));
     Serial.print(pattern.shuffle);
-    #endif
+#endif
 
     if (direction != 0)
       pattern.shuffle = constrain(pattern.shuffle + direction * 2, 10, 90);
 
-    #if (LOGGING)
+#if (LOGGING)
     Serial.print(F("\tafter : "));
     Serial.println(pattern.shuffle);
-    #endif
+#endif
 
     return pattern.shuffle;
   }
@@ -199,7 +201,7 @@ public:
 
   inline uint32_t getShuffleTime()
   {
-    uint32_t shuffle = round(getBpmInMilliseconds() * (abs(-1.0 * (shuffleNoteFlag % 2) + (100-pattern.shuffle) / 100.0)));
+    uint32_t shuffle = round(getBpmInMilliseconds() * (abs(-1.0 * (shuffleNoteFlag % 2) + (100 - pattern.shuffle) / 100.0)));
     return shuffle;
   }
 
@@ -230,7 +232,7 @@ public:
 
   void play()
   {
-    shuffleNoteFlag = (currentStep+1) % 2;
+    shuffleNoteFlag = (currentStep + 1) % 2;
     isPaused = false;
     ShiftRegisterPWM::singleton->set(ledPLAY, ledON);
   }
@@ -242,7 +244,7 @@ public:
     currentStep = step;
   }
 
-  short selectStep(short knobDirection)
+  int8_t selectStep(int8_t knobDirection)
   {
     if (knobDirection != 0)
     {
@@ -257,7 +259,7 @@ public:
   }
 
   void setValuePicker(int16_t value, int16_t low, int16_t high, bool timed = true, uint16_t ms = DIALOG_TIMEOUT)
-  {    
+  {
     dialog.setDisplayValue(value, low, high, timed, ms);
     dialog.writeoutDisplayBuffer(&ioData, &ioFlashData);
     dialog.show();
@@ -324,7 +326,7 @@ public:
     }
     case PINGPONG:
     {
-      short test = x + direction;
+      int8_t test = x + direction;
       if (test > patternLength - 1)
         direction = -1;
       if (test < 0)

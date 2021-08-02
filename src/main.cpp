@@ -41,6 +41,8 @@ MP4822 dac;
 Sequencer seq;
 ShiftRegisterPWM sr;
 StorageAction storageAction = StorageAction::LOAD_PATTERN;
+//Knob *_knob[3];
+SimpleKnob *knob[3];
 
 void interruptCallback() { seq.externalClockTrigger(); }
 void cvOut(uint8_t channel, int16_t v) { dac.DAC_set(channel, v); }
@@ -63,7 +65,6 @@ void setup()
 
     sr.interrupt(ShiftRegisterPWM::UpdateFrequency::Slow);
     attachInterrupt(digitalPinToInterrupt(CLK_IN), interruptCallback, RISING);
-    seq.setBpm(140);
     loadPattern(0, 0);
     seq.setPatternLength(pattern.length);
     showFreeMemory(7);
@@ -71,41 +72,72 @@ void setup()
 
 void setupKnobs()
 {
-    knob[0] = new Knob(0, encoderButtons, KNOB1_A, KNOB1_B);
-    knob[0]->setRange(ledOFF, 0, 0, MAXTEMPO / TEMPODIV);
-    knob[0]->setRange(ledOFF, 1, 1, 50); // brightness
-    knob[0]->setRange(ledOFF, 2, 0, 24); // gate duration % of note
-    knob[0]->setRange(ledON, 0, 20, MAXTEMPO / TEMPODIV);
-    knob[0]->setRange(ledON, 1, 1, 50);   // brightness
-    knob[0]->setRange(ledON, 2, -20, 20); // shuffle -10:hard shuffle | 0:no shuffle | +10: hard reverse shuffle
-    knob[0]->addModes(new KnobFunction[6]{TempoAdjust, StepSelect, GateTime, TempoAdjust, StepSelect, GateTime});
-    knob[0]->setMode(0);
-    knob[0]->setValue(120 / 10); // bpmMilliseconds
+    uint8_t k;
 
-    knob[1] = new Knob(1, encoderButtons, KNOB2_A, KNOB2_B);
-    knob[1]->setRange(ledOFF, 0, 1, 5);    // play mode
-    knob[1]->setRange(ledOFF, 1, 0, 24);   // glide time
-    knob[1]->setRange(ledOFF, 2, -24, 24); // pitch
-    knob[1]->setRange(ledON, 0, 1, 4);     // play mode
-    knob[1]->setRange(ledON, 1, 0, 24);    // glide time
-    knob[1]->setRange(ledON, 2, -24, 24);  // pitch
-    knob[1]->addModes(new KnobFunction[6]{
+    k = 0; // LEFT ENCODER
+    knob[k] = new SimpleKnob(KNOB1_A, KNOB1_B);
+    seq.state.item(LedState::ledOFF, k, 0)->set(20, MAXTEMPO, 100, 140); // Tempo
+    seq.state.item(LedState::ledOFF, k, 1)->set(1, 16);                  // Step select
+    seq.state.item(LedState::ledOFF, k, 2)->set(1, 100, 25);             // Gate duration % of bpm
+    seq.state.item(LedState::ledON, k, 0)->set(20, MAXTEMPO, 100, 140);  // Tempo
+    seq.state.item(LedState::ledON, k, 1)->set(1, 50, 24, 30);           // Brightness
+    seq.state.item(LedState::ledON, k, 2)->set(-90, 90, 21);             // Shuffle %
+
+    k = 1; // MIDDLE ENCODER
+    knob[k] = new SimpleKnob(KNOB2_A, KNOB2_B);
+    seq.state.item(LedState::ledOFF, k, 0)->set(1, 5);                  // Play mode
+    seq.state.item(LedState::ledOFF, k, 1)->set(0, 100, 21, 5);         // Glide time % of bpm
+    seq.state.item(LedState::ledOFF, k, 2)->set(1, -24, 24, 0);         // Pitch
+    seq.state.item(LedState::ledON, k, 0)->set(1, 5);                   // TBC - Play mode
+    seq.state.item(LedState::ledON, k, 1)->set(0, 100, 21, 5);          // TBC - Glide time % of bpm
+    seq.state.item(LedState::ledON, k, 2)->set(1, -24, 24, 0);          // TBC - Pitch
+
+    k = 2; // RIGHT ENCODER
+    knob[k] = new SimpleKnob(KNOB3_A, KNOB3_B);
+    seq.state.item(LedState::ledOFF, k, 0)->set(1, 16, 16, 16);     // Num steps in pattern
+    seq.state.item(LedState::ledOFF, k, 1)->set(1, 4);              // Glide shape
+    seq.state.item(LedState::ledOFF, k, 2)->set(1, 8);              // Octave
+    seq.state.item(LedState::ledON, k, 0)->set(1, 16, 16, 16);      // TBC - Num steps in pattern
+    seq.state.item(LedState::ledON, k, 1)->set(1, 4);               // TBC - Glide shape
+    seq.state.item(LedState::ledON, k, 2)->set(1, 8);               // TBC - Octave
+
+    /*
+    _knob[0] = new Knob(0, encoderButtons, KNOB1_A, KNOB1_B);
+    _knob[0]->setRange(ledOFF, 0, 0, MAXTEMPO / TEMPODIV);
+    _knob[0]->setRange(ledOFF, 1, 1, 50); // brightness
+    _knob[0]->setRange(ledOFF, 2, 0, 24); // gate duration % of note
+    _knob[0]->setRange(ledON, 0, 20, MAXTEMPO / TEMPODIV);
+    _knob[0]->setRange(ledON, 1, 1, 50);   // brightness
+    _knob[0]->setRange(ledON, 2, -20, 20); // shuffle -10:hard shuffle | 0:no shuffle | +10: hard reverse shuffle
+    _knob[0]->addModes(new KnobFunction[6]{TempoAdjust, StepSelect, GateTime, TempoAdjust, StepSelect, GateTime});
+    _knob[0]->setMode(0);
+    _knob[0]->setValue(120 / 10); // bpmMilliseconds
+
+    _knob[1] = new Knob(1, encoderButtons, KNOB2_A, KNOB2_B);
+    _knob[1]->setRange(ledOFF, 0, 1, 5);    // play mode
+    _knob[1]->setRange(ledOFF, 1, 0, 24);   // glide time
+    _knob[1]->setRange(ledOFF, 2, -24, 24); // pitch
+    _knob[1]->setRange(ledON, 0, 1, 4);     // play mode
+    _knob[1]->setRange(ledON, 1, 0, 24);    // glide time
+    _knob[1]->setRange(ledON, 2, -24, 24);  // pitch
+    _knob[1]->addModes(new KnobFunction[6]{
         PlayMode, GlideTime, Pitch,
         PlayMode, GlideTime, Pitch});
-    knob[1]->setMode(0);
+    _knob[1]->setMode(0);
 
-    knob[2] = new Knob(2, encoderButtons, KNOB3_A, KNOB3_B);
-    knob[2]->setRange(ledOFF, 0, 1, PATTERN_STEP_MAX); // pattern length
-    knob[2]->setRange(ledOFF, 1, 0, 3);                // glide shape/curve
-    knob[2]->setRange(ledOFF, 2, 1, 8);                // octave
-    knob[2]->setRange(ledON, 0, 1, PATTERN_STEP_MAX);  // pattern length
-    knob[2]->setRange(ledON, 1, 0, 3);                 // glide shape/curve
-    knob[2]->setRange(ledON, 2, 1, 8);                 // octave
-    knob[2]->addModes(new KnobFunction[9]{
+    _knob[2] = new Knob(2, encoderButtons, KNOB3_A, KNOB3_B);
+    _knob[2]->setRange(ledOFF, 0, 1, PATTERN_STEP_MAX); // pattern length
+    _knob[2]->setRange(ledOFF, 1, 0, 3);                // glide shape/curve
+    _knob[2]->setRange(ledOFF, 2, 1, 8);                // octave
+    _knob[2]->setRange(ledON, 0, 1, PATTERN_STEP_MAX);  // pattern length
+    _knob[2]->setRange(ledON, 1, 0, 3);                 // glide shape/curve
+    _knob[2]->setRange(ledON, 2, 1, 8);                 // octave
+    _knob[2]->addModes(new KnobFunction[9]{
         NumSteps, GlideShape, Octave,
         NumSteps, GlideShape, Octave});
-    knob[2]->setMode(0);
-    knob[2]->setValue(16);
+    _knob[2]->setMode(0);
+    _knob[2]->setValue(16);
+    */
 }
 
 #pragma endregion
@@ -211,11 +243,11 @@ void updatePatternStorage()
     switch (uiState)
     {
     case UIState::ACTION_BANK_SELECT:
-        selectBank(knob[2], UIState::ACTION_PATTERN_SELECT);
+        selectBank(_knob[2], UIState::ACTION_PATTERN_SELECT);
         break;
 
     case UIState::ACTION_PATTERN_SELECT:
-        selectPattern(knob[2], UIState::ACTION_COMPLETE);
+        selectPattern(_knob[2], UIState::ACTION_COMPLETE);
         break;
 
     case UIState::ACTION_COMPLETE:
@@ -232,9 +264,9 @@ void updatePatternStorage()
 
 void showKnobSelectorLeds()
 {
-    knob[0]->setLED();
-    knob[1]->setLED();
-    knob[2]->setLED();
+    _knob[0]->setLED();
+    _knob[1]->setLED();
+    _knob[2]->setLED();
 }
 
 #pragma endregion
@@ -287,9 +319,9 @@ void handleFunctionButtons()
             seq.setRecording(recordState);
             if (recordState)
             {
-                knob[0]->setMode(KnobFunction::StepSelect);
-                knob[1]->setMode(KnobFunction::PlayMode);
-                knob[2]->setMode(KnobFunction::Octave);
+                _knob[0]->setMode(KnobFunction::StepSelect);
+                _knob[1]->setMode(KnobFunction::PlayMode);
+                _knob[2]->setMode(KnobFunction::Octave);
             }
         }
         else
@@ -382,17 +414,19 @@ void handlePianoKeys()
 
 void handleLeftRotaryEncoder()
 {
-    Knob *k = knob[0];
-    short value = k->value();
-    short knobDirection = k->direction();
-    if (k->didChange())
+    uint8_t knobIndex = 0;
+    SimpleKnob *k = knob[knobIndex];
+    int8_t knobDirection = (int8_t)k->encoder()->getDirection();
+    if (k->didRotate())
     {
-        switch (k->getMode())
+        switch (k->mode)
         {
         case 0: // TEMPO
-        {
+        {            
             uint16_t newTempo;
-            int16_t steps = k->getRangeMax() - k->getRangeMin();
+            seqStateItem *state = seq.state.item(sr.get(SHIFT), knobIndex, k->mode);
+            int16_t steps = state->steps; // TODO - continue refactor from here!!!
+
             int16_t precisionPoint = steps / 2.0 + (k->getRangeMin() - 1);
 
 #if (LOGGING)
@@ -469,7 +503,7 @@ void handleLeftRotaryEncoder()
 
 void handleMiddleRotaryEncoder()
 {
-    Knob *k = knob[1];
+    Knob *k = _knob[1];
     if (k->didChange())
     {
         short value = k->value();
@@ -500,25 +534,25 @@ void handleMiddleRotaryEncoder()
 void handleRightRotaryEncoder()
 {
 
-    if (knob[2]->didChange())
+    if (_knob[2]->didChange())
     {
-        short value = knob[2]->value();
-        switch (knob[2]->getMode())
+        short value = _knob[2]->value();
+        switch (_knob[2]->getMode())
         {
 
         case 0: // pattern length
             seq.setPatternLength(value);
-            seq.setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
+            seq.setValuePicker(value, _knob[2]->getRangeMin(), _knob[2]->getRangeMax());
             break;
 
         case 1: // glide shape
             seq.setCurveShape((Glide::CurveType)value);
-            seq.setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
+            seq.setValuePicker(value, _knob[2]->getRangeMin(), _knob[2]->getRangeMax());
             break;
 
         case 2: // octave
             seq.setOctave(value);
-            seq.setValuePicker(value, knob[2]->getRangeMin(), knob[2]->getRangeMax());
+            seq.setValuePicker(value, _knob[2]->getRangeMin(), _knob[2]->getRangeMax());
             break;
         }
         showFreeMemory();

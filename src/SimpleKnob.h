@@ -12,6 +12,8 @@ private:
     bool _changed;
 
 public:
+    uint8_t mode = 0;
+
     SimpleKnob(uint8_t pin1, uint8_t pin2)
     {
         _encoder = new RotaryEncoder(pin1, pin2, RotaryEncoder::LatchMode::TWO03);
@@ -24,12 +26,17 @@ public:
             delete (_encoder);
     }
 
-    void setValue(int8_t value) {
+    void setValue(int8_t value)
+    {
         _value = value;
         _encoder->setPosition(value);
     }
 
-    bool didValueChange() { return _changed; }
+    RotaryEncoder *encoder() { return _encoder; }
+
+    void nextMode() { ++mode %= 3; }
+
+    bool didRotate() { return _changed; }
 
     void update()
     {
