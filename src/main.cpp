@@ -13,6 +13,8 @@
 #include "glide.h"
 #include "ShiftRegisterPWM.h"
 #include "knob.h"
+#include "SimpleKnob.h"
+#include "seqState.h"
 
 #pragma region FUNCTION HEADERS
 void setupSequencer();

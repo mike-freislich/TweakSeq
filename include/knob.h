@@ -25,7 +25,7 @@ struct KnobState
   short pos = 0;
   short rangeMin = 0;
   short rangeMax = 20;
-} __attribute__((__packed__));
+};
 
 class Knob
 {
@@ -37,8 +37,8 @@ private:
   uint8_t modeIndex = 0;
   uint8_t lastShiftState = 0;
   bool changed = false;
-  short lastDirection = 0;  
-  KnobState knobState[2][3];  
+  short lastDirection = 0;
+  KnobState knobState[2][3];
   
   uint8_t modeShift()
   {    
@@ -51,17 +51,18 @@ private:
     return value;
   }
 
+/*
   int8_t constrainPos(int8_t pos, int8_t rangeMin, int8_t rangeMax)
   {    
     int8_t newPos = constrain(pos, rangeMin, rangeMax);
     
-    if (pos > rangeMax)
-      newPos = rangeMax;
-    if (pos < rangeMin)
-      newPos = rangeMin;
+    // if (pos > rangeMax)
+    //   newPos = rangeMax;
+    // if (pos < rangeMin)
+    //   newPos = rangeMin;
     return newPos;
   }
-
+*/
   KnobState *getKnobState(uint8_t mode)
   {
     return &knobState[modeShift()][mode];
@@ -81,13 +82,13 @@ public:
     KnobState *k = &knobState[shift][forMode];
     k->rangeMin = newRangeMin;
     k->rangeMax = newRangeMax;
-    k->pos = constrainPos(value(), k->rangeMin, k->rangeMax);
+    k->pos = constrain(value(), k->rangeMin, k->rangeMax);
   }
 
   void setValue(short newValue)
   {
     KnobState *k = getKnobState(modeIndex);
-    short newPos = constrainPos(newValue, k->rangeMin, k->rangeMax);
+    short newPos = constrain(newValue, k->rangeMin, k->rangeMax);
     encoder->setPosition(newPos);
     k->pos = newPos;
   }
@@ -134,7 +135,7 @@ public:
   void resetKnobState() {
     changed=false;
     KnobState *k = getKnobState(modeIndex);
-    k->pos = constrainPos(encoder->getPosition(), k->rangeMin, k->rangeMax);
+    k->pos = constrain(encoder->getPosition(), k->rangeMin, k->rangeMax);
     lastDirection = (short)encoder->getDirection();    
   }
 
@@ -143,7 +144,7 @@ public:
     encoder->tick();
     changed = false;
     KnobState *k = getKnobState(modeIndex);
-    short newPos = constrainPos(encoder->getPosition(), k->rangeMin, k->rangeMax);
+    short newPos = constrain(encoder->getPosition(), k->rangeMin, k->rangeMax);
     lastDirection = (short)encoder->getDirection();
 
     if (newPos != encoder->getPosition())    
