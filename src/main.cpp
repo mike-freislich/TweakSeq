@@ -425,17 +425,18 @@ void handleLeftRotaryEncoder()
         {            
             uint16_t newTempo;
             seqStateItem *state = seq.state.item(sr.get(SHIFT), knobIndex, k->mode);
-            int16_t steps = state->steps; // TODO - continue refactor from here!!!
-
-            int16_t precisionPoint = steps / 2.0 + (k->getRangeMin() - 1);
+            int16_t steps = state->steps; 
+            int16_t precisionPoint = steps / 2.0 + state->min - 1;
+            
+            // TODO - increment value -- map()
 
 #if (LOGGING)
             char buffer[100];
             sprintf(buffer, "value: %d\tsteps: %d\tx-over: %d\t", value, steps, precisionPoint);
             Serial.print(buffer);
 #endif
-            if (value <= precisionPoint)
-                newTempo = k->getRangeMin() + ((value - k->getRangeMin()) * 10) + 20;
+            if (state->value <= precisionPoint)
+                newTempo = state->min + state->value; // TODO - continue refactor from here!!!
             else
             {
 #if (LOGGING)
